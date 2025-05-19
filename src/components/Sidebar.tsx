@@ -1,11 +1,12 @@
 
 import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
+  const location = useLocation();
 
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
@@ -23,10 +24,12 @@ const Sidebar = () => {
     { title: 'Help', icon: '❓', path: '/help' },
   ];
 
+  const isActive = (path: string) => location.pathname === path;
+
   return (
     <div
       className={cn(
-        "h-screen bg-teal-800 text-white transition-all duration-300 flex flex-col relative",
+        "h-screen bg-teal-700 text-white transition-all duration-300 flex flex-col relative",
         collapsed ? "w-16" : "w-60"
       )}
     >
@@ -35,7 +38,7 @@ const Sidebar = () => {
         <button 
           onClick={toggleSidebar}
           className={cn(
-            "p-1 rounded hover:bg-teal-700",
+            "p-1 rounded hover:bg-teal-600",
             collapsed ? "mx-auto" : ""
           )}
         >
@@ -48,7 +51,10 @@ const Sidebar = () => {
           <Link 
             key={index} 
             to={item.path}
-            className="flex items-center p-4 hover:bg-teal-700"
+            className={cn(
+              "flex items-center p-3 hover:bg-teal-600",
+              isActive(item.path) ? "bg-teal-600" : ""
+            )}
           >
             <span className="mr-3">{item.icon}</span>
             {!collapsed && <span>{item.title}</span>}
