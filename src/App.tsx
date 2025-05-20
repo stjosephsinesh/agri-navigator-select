@@ -12,6 +12,7 @@ import DistrictCropSelection from "./pages/DistrictCropSelection";
 import CoverSelection from "./pages/CoverSelection";
 import QuickTool from "./pages/QuickTool";
 import BurnCost from "./pages/BurnCost";
+import Summary from "./pages/Summary";
 import Users from "./pages/Users";
 import Help from "./pages/Help";
 import NotFound from "./pages/NotFound";
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/cover-selection" element={<Layout><CoverSelection /></Layout>} />
           <Route path="/quick-tool" element={<Layout><QuickTool /></Layout>} />
           <Route path="/burn-cost" element={<Layout><BurnCost /></Layout>} />
+          <Route path="/summary" element={<Layout><Summary /></Layout>} />
           <Route path="/users" element={<Layout><Users /></Layout>} />
           <Route path="/help" element={<Layout><Help /></Layout>} />
           <Route path="*" element={<NotFound />} />

@@ -4,7 +4,14 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { useLocation, useNavigate } from 'react-router-dom';
 
 // Define types for the form state
 interface StrikeData {
@@ -24,6 +31,27 @@ interface PerilData {
 }
 
 const QuickTool = () => {
+  // Extract cover name from URL params
+  const location = useLocation();
+  const navigate = useNavigate();
+  const queryParams = new URLSearchParams(location.search);
+  const coverName = queryParams.get('cover') || "No cover selected";
+  
+  // Peril types dropdown
+  const perilTypes = ["Rainfall", "Humidity", "Max Temp", "Min Temp", "Max Windspeed", "Min Windspeed"];
+  const [selectedPerilType, setSelectedPerilType] = useState<string>(perilTypes[0]);
+
+  // Template options
+  const templateOptions = [
+    "Rice Template 2023", 
+    "Wheat Template 2023", 
+    "Cotton Template 2023", 
+    "Maize Template 2023",
+    "Soybean Template 2023",
+    "Pulses Template 2023"
+  ];
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("");
+
   // Form state
   const [numPerils, setNumPerils] = useState<number>(1);
   const [numPhases, setNumPhases] = useState<number>(3);
@@ -109,6 +137,11 @@ const QuickTool = () => {
     setSameStrikesAcrossPerils(checked);
   };
 
+  // Handle template selection
+  const handleTemplateSelect = (template: string) => {
+    setSelectedTemplate(template);
+  };
+
   return (
     <div className="p-6">
       <div className="max-w-4xl mx-auto">
@@ -117,8 +150,29 @@ const QuickTool = () => {
         </div>
 
         <div className="bg-white p-6 rounded-b-lg shadow-md">
+          <div className="mb-6 bg-blue-50 p-3 rounded-md">
+            <h2 className="text-xl font-medium text-blue-800">Selected Cover:</h2>
+            <p className="text-lg">{decodeURIComponent(coverName)}</p>
+          </div>
+
           <div className="mb-8">
-            <h2 className="text-xl font-bold mb-4">Phase Strike Calculator</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Quick Tool</h2>
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="perilType" className="text-sm">Peril:</Label>
+                <Select value={selectedPerilType} onValueChange={setSelectedPerilType}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Select peril" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {perilTypes.map((peril) => (
+                      <SelectItem key={peril} value={peril}>{peril}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
             <div className="flex items-center gap-4 mb-4">
               <div className="w-1/3">
                 <Label htmlFor="numPerils" className="text-sm font-medium mb-1 block">Number of Perils</Label>
@@ -126,7 +180,7 @@ const QuickTool = () => {
                   id="numPerils"
                   value={numPerils}
                   onChange={(e) => setNumPerils(Number(e.target.value))}
-                  className="w-full border rounded p-2 text-sm"
+                  className="w-full border rounded p-1 text-sm h-8"
                 >
                   <option value={1}>1</option>
                   <option value={2}>2</option>
@@ -140,7 +194,7 @@ const QuickTool = () => {
                   id="numPhases"
                   value={numPhases}
                   onChange={(e) => setNumPhases(Number(e.target.value))}
-                  className="w-full border rounded p-2 text-sm"
+                  className="w-full border rounded p-1 text-sm h-8"
                 >
                   {[1, 2, 3, 4, 5].map(num => (
                     <option key={num} value={num}>{num}</option>
@@ -154,7 +208,7 @@ const QuickTool = () => {
                   id="numStrikes"
                   value={numStrikes}
                   onChange={(e) => setNumStrikes(Number(e.target.value))}
-                  className="w-full border rounded p-2 text-sm"
+                  className="w-full border rounded p-1 text-sm h-8"
                 >
                   {[1, 2, 3, 4, 5].map(num => (
                     <option key={num} value={num}>{num}</option>
@@ -192,6 +246,29 @@ const QuickTool = () => {
                 >
                   Same strike values covering all phases collectively
                 </label>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 mb-4">
+              <Button className="bg-green-500 hover:bg-green-600">
+                Save as Template
+              </Button>
+              
+              <div className="flex items-center gap-2 border rounded p-1 bg-white">
+                <Select value={selectedTemplate} onValueChange={handleTemplateSelect}>
+                  <SelectTrigger className="w-64 border-0 p-1 h-7">
+                    <SelectValue placeholder="Select template" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {templateOptions.map((template) => (
+                      <SelectItem key={template} value={template}>{template}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <Button className="bg-cyan-500 hover:bg-cyan-600 h-7 py-0">
+                  Load from Template
+                </Button>
               </div>
             </div>
           </div>
@@ -288,19 +365,23 @@ const QuickTool = () => {
             </div>
           ))}
 
-          <div className="flex justify-center space-x-4 mt-8">
-            <Button className="bg-blue-600 hover:bg-blue-700">Save to Project</Button>
-            <Button className="bg-green-600 hover:bg-green-700">View Saved List</Button>
-            <Button className="bg-red-600 hover:bg-red-700">Clear Project</Button>
-            <Button className="bg-gray-600 hover:bg-gray-700">Download TERM Input Template Sheet</Button>
-          </div>
+          <div className="mt-8">
+            <div className="flex justify-center space-x-4 mb-6">
+              <Button className="bg-blue-600 hover:bg-blue-700">Save to Project</Button>
+              <Button className="bg-green-600 hover:bg-green-700">View Saved List</Button>
+              <Button className="bg-red-600 hover:bg-red-700">Clear Project</Button>
+              <Button className="bg-gray-600 hover:bg-gray-700">Download TERM Input Template Sheet</Button>
+            </div>
 
-          <div className="mt-4 text-center text-gray-700">
-            <p>Please review the downloaded files and change the dates/values as per term sheet.</p>
-          </div>
+            <div className="text-center text-gray-700 mb-6">
+              <p>Please review the downloaded files and change the dates/values as per term sheet.</p>
+            </div>
 
-          <div className="mt-8 flex justify-end">
-            <Button className="bg-teal-600 hover:bg-teal-700">Go to Burncost</Button>
+            <div className="flex justify-end">
+              <Button className="bg-teal-600 hover:bg-teal-700" onClick={() => navigate('/burn-cost')}>
+                Go to Burncost
+              </Button>
+            </div>
           </div>
         </div>
       </div>

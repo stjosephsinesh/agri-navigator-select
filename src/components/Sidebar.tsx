@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
@@ -20,11 +20,22 @@ const Sidebar = () => {
     { title: 'Cover Selection', icon: '🌿', path: '/cover-selection' },
     { title: 'Quick Tool', icon: '🔧', path: '/quick-tool' },
     { title: 'Burn Cost Calculation', icon: '💰', path: '/burn-cost' },
+    { title: 'Summary', icon: '📈', path: '/summary' },
     { title: 'Users', icon: '👥', path: '/users' },
     { title: 'Help', icon: '❓', path: '/help' },
   ];
 
   const isActive = (path: string) => location.pathname === path;
+  
+  // Function to determine if a menu item should have the completed check
+  const isCompleted = (index: number, currentPath: string) => {
+    // Find the index of the current active path
+    const activeIndex = menuItems.findIndex(item => item.path === currentPath || 
+      (currentPath.includes('?') && item.path === currentPath.split('?')[0]));
+    
+    // All items before the current one are considered completed
+    return index < activeIndex;
+  };
 
   return (
     <div
@@ -57,7 +68,14 @@ const Sidebar = () => {
             )}
           >
             <span className="mr-3">{item.icon}</span>
-            {!collapsed && <span>{item.title}</span>}
+            {!collapsed && (
+              <div className="flex justify-between items-center w-full">
+                <span>{item.title}</span>
+                {isCompleted(index, location.pathname) && (
+                  <Check size={16} className="text-green-300" />
+                )}
+              </div>
+            )}
           </Link>
         ))}
       </div>
