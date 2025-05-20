@@ -33,6 +33,7 @@ const CoverSelection = () => {
     customCovers: []
   });
   const [searchQuery, setSearchQuery] = useState('');
+  const [autoLoad, setAutoLoad] = useState(false);
   const navigate = useNavigate();
   
   const coverCategories = {
@@ -76,6 +77,8 @@ const CoverSelection = () => {
           [category]: current.filter(c => c !== cover)
         };
       } else {
+        // Open the quick tool page in a new tab when a cover is selected
+        openCoverInQuickTool(cover);
         return {
           ...prev,
           [category]: [...current, cover]
@@ -210,7 +213,11 @@ const CoverSelection = () => {
       <div className="bg-white p-6 rounded-b-lg shadow-md">
         <div className="mb-4">
           <div className="flex items-center gap-2">
-            <Checkbox id="autoLoad" />
+            <Checkbox 
+              id="autoLoad" 
+              checked={autoLoad}
+              onCheckedChange={(checked) => setAutoLoad(!!checked)}
+            />
             <label htmlFor="autoLoad" className="text-gray-700">
               Auto load the previous template selections for district-crop combo.
             </label>
@@ -260,16 +267,6 @@ const CoverSelection = () => {
                       >
                         {cover}
                       </label>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openCoverInQuickTool(cover);
-                        }}
-                      >
-                        Open
-                      </Button>
                     </div>
                   ))}
                 </div>
@@ -315,16 +312,6 @@ const CoverSelection = () => {
                       >
                         {cover}
                       </label>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openCoverInQuickTool(cover);
-                        }}
-                      >
-                        Open
-                      </Button>
                     </div>
                   ))}
                 </div>
@@ -370,16 +357,6 @@ const CoverSelection = () => {
                       >
                         {cover}
                       </label>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openCoverInQuickTool(cover);
-                        }}
-                      >
-                        Open
-                      </Button>
                     </div>
                   ))}
                 </div>
@@ -440,13 +417,6 @@ const CoverSelection = () => {
                         {cover}
                       </label>
                       <div className="flex items-center gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          onClick={() => openCoverInQuickTool(cover)}
-                        >
-                          Open
-                        </Button>
                         <Button size="sm" variant="ghost" className="text-blue-500 p-1 h-7">
                           <Edit size={16} />
                         </Button>
@@ -460,6 +430,15 @@ const CoverSelection = () => {
               </AccordionContent>
             </AccordionItem>
           </Accordion>
+        </div>
+
+        <div className="flex justify-end mt-6">
+          <Button 
+            className="bg-blue-600 hover:bg-blue-700"
+            onClick={() => navigate('/quick-tool')}
+          >
+            Continue
+          </Button>
         </div>
       </div>
     </div>

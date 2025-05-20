@@ -53,51 +53,45 @@ const QuickTool = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
 
   // Form state
-  const [numPerils, setNumPerils] = useState<number>(1);
   const [numPhases, setNumPhases] = useState<number>(3);
   const [numStrikes, setNumStrikes] = useState<number>(2);
   const [sameStrikeValues, setSameStrikeValues] = useState<boolean>(false);
-  const [sameStrikesAcrossPerils, setSameStrikesAcrossPerils] = useState<boolean>(false);
-  const [perils, setPerils] = useState<PerilData[]>([]);
+  const [perils, setPerils] = useState<PerilData[]>([{ phases: [] }]); // Always 1 peril now
 
   // Initialize form data when configuration changes
   useEffect(() => {
     const newPerils: PerilData[] = [];
     
-    for (let perilIndex = 0; perilIndex < numPerils; perilIndex++) {
-      const phases: PhaseData[] = [];
+    // Only one peril now
+    const phases: PhaseData[] = [];
+    
+    for (let phaseIndex = 0; phaseIndex < numPhases; phaseIndex++) {
+      // For phases after the first one, when sameStrikeValues is true, don't show strike fields
+      const shouldShowStrikes = !sameStrikeValues || phaseIndex === 0;
       
-      for (let phaseIndex = 0; phaseIndex < numPhases; phaseIndex++) {
-        // For phases after the first one, when sameStrikeValues is true, don't show strike fields
-        const shouldShowStrikes = !sameStrikeValues || phaseIndex === 0;
-        
-        // For perils after the first one, when sameStrikesAcrossPerils is true, don't show strike fields
-        const shouldShowPerilStrikes = !sameStrikesAcrossPerils || perilIndex === 0;
-        
-        const strikes: StrikeData[] = [];
-        
-        if (shouldShowStrikes && shouldShowPerilStrikes) {
-          for (let strikeIndex = 0; strikeIndex < numStrikes; strikeIndex++) {
-            strikes.push({
-              strike: '',
-              notionalPayout: ''
-            });
-          }
+      const strikes: StrikeData[] = [];
+      
+      if (shouldShowStrikes) {
+        for (let strikeIndex = 0; strikeIndex < numStrikes; strikeIndex++) {
+          strikes.push({
+            strike: '',
+            notionalPayout: ''
+          });
         }
-        
-        phases.push({
-          trigger: '',
-          strikes,
-          exit: shouldShowStrikes && shouldShowPerilStrikes ? '' : '',
-          maxPayout: shouldShowPerilStrikes ? '' : ''
-        });
       }
       
-      newPerils.push({ phases });
+      phases.push({
+        trigger: '',
+        strikes,
+        exit: shouldShowStrikes ? '' : '',
+        maxPayout: ''
+      });
     }
     
+    newPerils.push({ phases });
+    
     setPerils(newPerils);
-  }, [numPerils, numPhases, numStrikes, sameStrikeValues, sameStrikesAcrossPerils]);
+  }, [numPhases, numStrikes, sameStrikeValues]);
 
   // Handle value changes
   const handlePhaseInputChange = (
@@ -131,10 +125,6 @@ const QuickTool = () => {
   // Handle checkbox changes
   const handleSameStrikeValuesChange = (checked: boolean) => {
     setSameStrikeValues(checked);
-  };
-
-  const handleSameStrikesAcrossPerilsChange = (checked: boolean) => {
-    setSameStrikesAcrossPerils(checked);
   };
 
   // Handle template selection
@@ -174,21 +164,7 @@ const QuickTool = () => {
             </div>
             
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-1/3">
-                <Label htmlFor="numPerils" className="text-sm font-medium mb-1 block">Number of Perils</Label>
-                <select 
-                  id="numPerils"
-                  value={numPerils}
-                  onChange={(e) => setNumPerils(Number(e.target.value))}
-                  className="w-full border rounded p-1 text-sm h-8"
-                >
-                  <option value={1}>1</option>
-                  <option value={2}>2</option>
-                  <option value={3}>3</option>
-                </select>
-              </div>
-
-              <div className="w-1/3">
+              <div className="w-1/2">
                 <Label htmlFor="numPhases" className="text-sm font-medium mb-1 block">Number of Phases</Label>
                 <select 
                   id="numPhases"
@@ -202,7 +178,7 @@ const QuickTool = () => {
                 </select>
               </div>
 
-              <div className="w-1/3">
+              <div className="w-1/2">
                 <Label htmlFor="numStrikes" className="text-sm font-medium mb-1 block">Number of Strikes</Label>
                 <select 
                   id="numStrikes"
@@ -217,23 +193,7 @@ const QuickTool = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-4 mb-6 flex-wrap">
-              {numPerils > 1 && (
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="sameStrikesAcrossPerils"
-                    checked={sameStrikesAcrossPerils}
-                    onCheckedChange={handleSameStrikesAcrossPerilsChange}
-                  />
-                  <label 
-                    htmlFor="sameStrikesAcrossPerils" 
-                    className="text-sm font-medium cursor-pointer"
-                  >
-                    Check against the same strike across perils
-                  </label>
-                </div>
-              )}
-
+            <div className="flex items-center mb-6">
               <div className="flex items-center space-x-2">
                 <Checkbox 
                   id="sameStrikeValues"
@@ -275,10 +235,6 @@ const QuickTool = () => {
 
           {perils.map((peril, perilIndex) => (
             <div key={perilIndex} className="mb-8">
-              {numPerils > 1 && (
-                <h3 className="text-lg font-semibold mb-4 bg-gray-100 p-2 rounded">Peril {perilIndex + 1}</h3>
-              )}
-
               <div className="space-y-6">
                 <div className="grid grid-cols-3 gap-4 mb-2">
                   {Array.from({ length: numPhases }).map((_, phaseIndex) => (
@@ -297,9 +253,7 @@ const QuickTool = () => {
                       </div>
 
                       {/* Only show strikes for first phase if sameStrikeValues is true */}
-                      {/* Or only show for first peril if sameStrikesAcrossPerils is true */}
-                      {(!sameStrikeValues || phaseIndex === 0) && 
-                       (!sameStrikesAcrossPerils || perilIndex === 0) && (
+                      {(!sameStrikeValues || phaseIndex === 0) && (
                         <>
                           <div className="mb-3">
                             <Label className="text-xs mb-1 block">Strikes</Label>
@@ -346,18 +300,16 @@ const QuickTool = () => {
                         </>
                       )}
 
-                      {!sameStrikesAcrossPerils || perilIndex === 0 ? (
-                        <div className="mb-3">
-                          <Label className="text-xs mb-1 block">Maximum Payout per Ha. (Rs.)</Label>
-                          <Input
-                            type="text"
-                            value={peril.phases[phaseIndex]?.maxPayout || ''}
-                            onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, 'maxPayout', e.target.value)}
-                            className="h-7 text-sm w-24"
-                            placeholder="e.g. 5000"
-                          />
-                        </div>
-                      ) : null}
+                      <div className="mb-3">
+                        <Label className="text-xs mb-1 block">Maximum Payout per Ha. (Rs.)</Label>
+                        <Input
+                          type="text"
+                          value={peril.phases[phaseIndex]?.maxPayout || ''}
+                          onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, 'maxPayout', e.target.value)}
+                          className="h-7 text-sm w-24"
+                          placeholder="e.g. 5000"
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>
