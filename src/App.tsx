@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
+import ProjectInfo from "./pages/ProjectInfo";
 import WeatherData from "./pages/WeatherData";
 import DataChecks from "./pages/DataChecks";
 import DistrictCropSelection from "./pages/DistrictCropSelection";
@@ -27,6 +28,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Layout><Dashboard /></Layout>} />
+          <Route path="/project-info" element={<Layout><ProjectInfo /></Layout>} />
           <Route path="/weather-data" element={<Layout><WeatherData /></Layout>} />
           <Route path="/data-checks" element={<Layout><DataChecks /></Layout>} />
           <Route path="/district-crop-selection" element={<Layout><DistrictCropSelection /></Layout>} />
