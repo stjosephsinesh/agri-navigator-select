@@ -135,7 +135,7 @@ const DataChecks = () => {
                           <SelectValue placeholder="Select a field" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Auto-detect</SelectItem>
+                          <SelectItem value="auto-detect">Auto-detect</SelectItem>
                           {fieldMappingOptions.map((option) => (
                             <SelectItem key={option} value={option}>
                               {option}
