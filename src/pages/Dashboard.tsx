@@ -43,6 +43,14 @@ const Dashboard = () => {
               </RadioGroup>
               
               <div>
+                <Label htmlFor="created-by">Created by</Label>
+                <Input 
+                  id="created-by" 
+                  placeholder="Enter your name"
+                />
+              </div>
+              
+              <div>
                 <Label htmlFor="project-description">Project Description</Label>
                 <Textarea 
                   id="project-description" 

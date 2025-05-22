@@ -30,7 +30,8 @@ const CoverSelection = () => {
     rainfall: [],
     temperature: [],
     otherCovers: [],
-    customCovers: []
+    customCovers: [],
+    multiplePeril: []
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [autoLoad, setAutoLoad] = useState(false);
@@ -64,6 +65,11 @@ const CoverSelection = () => {
       "Cover 3 - Custom",
       "Cover 4 - Custom",
       "Cover 5 - Custom"
+    ],
+    multiplePeril: [
+      "MPeril1 - Temperature & Rainfall",
+      "MPeril2 - Temperature & Humidity",
+      "MPeril3 - Rainfall & Wind"
     ]
   };
 
@@ -78,7 +84,7 @@ const CoverSelection = () => {
         };
       } else {
         // Open the quick tool page in a new tab when a cover is selected
-        openCoverInQuickTool(cover);
+        openCoverInQuickTool(cover, category === 'multiplePeril');
         return {
           ...prev,
           [category]: [...current, cover]
@@ -95,12 +101,17 @@ const CoverSelection = () => {
   };
 
   const getSelectedCount = (category: string) => {
-    return selectedCovers[category as keyof typeof selectedCovers].length;
+    return selectedCovers[category as keyof typeof selectedCovers]?.length || 0;
   };
 
-  const openCoverInQuickTool = (cover: string) => {
-    // Open in new tab
-    const newWindow = window.open('/quick-tool?cover=' + encodeURIComponent(cover), '_blank');
+  const openCoverInQuickTool = (cover: string, isMultiPeril: boolean = false) => {
+    // Open in new tab with query params indicating if it's multiple peril
+    const queryParams = new URLSearchParams();
+    queryParams.append('cover', cover);
+    if (isMultiPeril) {
+      queryParams.append('multiPeril', 'true');
+    }
+    const newWindow = window.open(`/quick-tool?${queryParams.toString()}`, '_blank');
     newWindow?.focus();
   };
 
@@ -126,7 +137,7 @@ const CoverSelection = () => {
               <DialogHeader>
                 <DialogTitle>Copy Templates</DialogTitle>
               </DialogHeader>
-              <div className="bg-teal-200 p-4 rounded-lg">
+              <div className="bg-teal-100 p-4 rounded-lg">
                 <div className="grid grid-cols-2 gap-8">
                   <div>
                     <h3 className="font-semibold text-center mb-2">From</h3>
@@ -254,11 +265,11 @@ const CoverSelection = () => {
                     <div 
                       key={cover} 
                       className="flex items-center gap-2 hover:bg-gray-100 rounded p-1 cursor-pointer"
-                      onClick={() => handleCoverToggle('rainfall', cover)}
                     >
                       <Checkbox
                         id={`rainfall-${cover}`}
                         checked={selectedCovers.rainfall.includes(cover)}
+                        onCheckedChange={() => handleCoverToggle('rainfall', cover)}
                         className="mr-2"
                       />
                       <label
@@ -299,15 +310,60 @@ const CoverSelection = () => {
                     <div 
                       key={cover} 
                       className="flex items-center gap-2 hover:bg-gray-100 rounded p-1 cursor-pointer"
-                      onClick={() => handleCoverToggle('temperature', cover)}
                     >
                       <Checkbox
                         id={`temperature-${cover}`}
                         checked={selectedCovers.temperature.includes(cover)}
+                        onCheckedChange={() => handleCoverToggle('temperature', cover)}
                         className="mr-2"
                       />
                       <label
                         htmlFor={`temperature-${cover}`}
+                        className="text-sm text-gray-700 leading-tight cursor-pointer flex-grow"
+                      >
+                        {cover}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+            
+            <AccordionItem value="multiplePeril" className="border-0">
+              <div className="bg-purple-100 rounded-t-md">
+                <div className="flex justify-between items-center p-2">
+                  <div className="flex items-center gap-2">
+                    <Umbrella className="h-5 w-5" />
+                    <AccordionTrigger className="hover:no-underline p-0 text-md font-medium">
+                      Multiple Peril
+                    </AccordionTrigger>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleUncheckAll('multiplePeril')}
+                      className="bg-white text-sm py-1 px-2 rounded border"
+                    >
+                      Uncheck All
+                    </button>
+                    <span className="text-sm">{getSelectedCount('multiplePeril')} covers selected</span>
+                  </div>
+                </div>
+              </div>
+              <AccordionContent className="mt-0 pt-0 border border-t-0 rounded-b-md">
+                <div className="p-2 space-y-2">
+                  {coverCategories.multiplePeril.map((cover) => (
+                    <div 
+                      key={cover} 
+                      className="flex items-center gap-2 hover:bg-gray-100 rounded p-1 cursor-pointer"
+                    >
+                      <Checkbox
+                        id={`multiplePeril-${cover}`}
+                        checked={selectedCovers.multiplePeril.includes(cover)}
+                        onCheckedChange={() => handleCoverToggle('multiplePeril', cover)}
+                        className="mr-2"
+                      />
+                      <label
+                        htmlFor={`multiplePeril-${cover}`}
                         className="text-sm text-gray-700 leading-tight cursor-pointer flex-grow"
                       >
                         {cover}
@@ -343,12 +399,12 @@ const CoverSelection = () => {
                   {coverCategories.otherCovers.map((cover) => (
                     <div 
                       key={cover} 
-                      className="flex items-center gap-2 hover:bg-gray-100 rounded p-1 cursor-pointer" 
-                      onClick={() => handleCoverToggle('otherCovers', cover)}
+                      className="flex items-center gap-2 hover:bg-gray-100 rounded p-1 cursor-pointer"
                     >
                       <Checkbox
                         id={`otherCovers-${cover}`}
                         checked={selectedCovers.otherCovers.includes(cover)}
+                        onCheckedChange={() => handleCoverToggle('otherCovers', cover)}
                         className="mr-2"
                       />
                       <label

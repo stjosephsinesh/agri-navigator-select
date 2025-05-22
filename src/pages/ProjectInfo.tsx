@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -13,8 +12,6 @@ const ProjectInfo = () => {
   const [state, setState] = useState<string>('');
   const [projectYear, setProjectYear] = useState<string>('');
   const [season, setSeason] = useState<string>('');
-  const [description, setDescription] = useState<string>('');
-  const [projectType, setProjectType] = useState<string>('underwriting');
   const [templateDataType, setTemplateDataType] = useState<string>('fullData');
   const [useOldTemplate, setUseOldTemplate] = useState<boolean>(false);
   
@@ -40,7 +37,7 @@ const ProjectInfo = () => {
       <div className="bg-white p-6 rounded-b-lg shadow-md">
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
+            <div className="bg-gray-50 p-4 rounded-md border">
               <h2 className="text-lg font-semibold mb-3">Project Details</h2>
               <div className="space-y-4">
                 <div>
@@ -84,35 +81,13 @@ const ProjectInfo = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                
-                <div>
-                  <Label htmlFor="description">Project Description</Label>
-                  <Input 
-                    id="description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Enter project description"
-                    className="w-full"
-                  />
-                </div>
               </div>
             </div>
             
-            <div>
-              <h2 className="text-lg font-semibold mb-3">Project Type</h2>
-              <RadioGroup value={projectType} onValueChange={setProjectType} className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="underwriting" id="underwriting" />
-                  <Label htmlFor="underwriting">Underwriting</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="claim" id="claim" />
-                  <Label htmlFor="claim">Claim</Label>
-                </div>
-              </RadioGroup>
-
-              <div className="mt-6">
-                <h2 className="text-lg font-semibold mb-3">Template File Data Type</h2>
+            <div className="bg-gray-50 p-4 rounded-md border">
+              <h2 className="text-lg font-semibold mb-3">Template Configuration</h2>
+              <div>
+                <h3 className="text-md font-medium mb-2">Template File Data Type</h3>
                 <RadioGroup value={templateDataType} onValueChange={setTemplateDataType} className="space-y-3">
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="fullData" id="fullData" />
@@ -126,7 +101,7 @@ const ProjectInfo = () => {
               </div>
 
               <div className="mt-6">
-                <h2 className="text-lg font-semibold mb-3">Use Old Template Data</h2>
+                <h3 className="text-md font-medium mb-2">Use Old Template Data</h3>
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="copyTermSheets"

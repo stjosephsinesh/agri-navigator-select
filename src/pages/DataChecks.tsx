@@ -5,10 +5,13 @@ import { Check } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from 'react-router-dom';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 const DataChecks = () => {
   const navigate = useNavigate();
   const [selectedTab, setSelectedTab] = useState('status');
+  const [selectedGeoLevels, setSelectedGeoLevels] = useState<string[]>([]);
   
   // Sample field mapping options
   const fieldMappingOptions = [
@@ -23,6 +26,11 @@ const DataChecks = () => {
     "Humidity", "Maximum Wind Speed", "Minimum Wind Speed"
   ];
 
+  // Geographic levels for output
+  const geoLevels = [
+    "District", "Zone", "Taluka/Mandal", "Gram Panchayat", "Latitude/Longitude"
+  ];
+
   // State for selected mapping values
   const [fieldMappings, setFieldMappings] = useState<Record<string, string>>({});
 
@@ -31,6 +39,16 @@ const DataChecks = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleGeoLevelChange = (level: string) => {
+    setSelectedGeoLevels(prev => {
+      if (prev.includes(level)) {
+        return prev.filter(l => l !== level);
+      } else {
+        return [...prev, level];
+      }
+    });
   };
 
   return (
@@ -81,6 +99,27 @@ const DataChecks = () => {
                 <p className="text-sm text-yellow-700 mt-1">
                   Map your input file's column names to the system field names. This is optional - by default, we'll try to match automatically.
                 </p>
+              </div>
+              
+              <div className="mb-6 border p-4 rounded-md bg-blue-50">
+                <h3 className="font-medium text-blue-800 mb-2">Select the geographical level for output</h3>
+                <div className="space-y-2">
+                  {geoLevels.map((level) => (
+                    <div key={level} className="flex items-center space-x-2">
+                      <Checkbox 
+                        id={`geo-level-${level}`} 
+                        checked={selectedGeoLevels.includes(level)}
+                        onCheckedChange={() => handleGeoLevelChange(level)}
+                      />
+                      <Label htmlFor={`geo-level-${level}`}>{level}</Label>
+                    </div>
+                  ))}
+                </div>
+                {selectedGeoLevels.length > 0 && (
+                  <p className="text-sm text-blue-600 mt-2">
+                    Selected levels: {selectedGeoLevels.join(', ')}
+                  </p>
+                )}
               </div>
               
               <div className="space-y-3">

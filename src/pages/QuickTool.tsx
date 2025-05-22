@@ -11,6 +11,13 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useLocation, useNavigate } from 'react-router-dom';
 
 // Define types for the form state
@@ -20,7 +27,8 @@ interface StrikeData {
 }
 
 interface PhaseData {
-  trigger: string;
+  triggers: string[];
+  operator: string;
   strikes: StrikeData[];
   exit: string;
   maxPayout: string;
@@ -36,11 +44,15 @@ const QuickTool = () => {
   const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
   const coverName = queryParams.get('cover') || "No cover selected";
+  const isMultiPeril = queryParams.get('multiPeril') === 'true';
   
   // Peril types dropdown
   const perilTypes = ["Rainfall", "Humidity", "Max Temp", "Min Temp", "Max Windspeed", "Min Windspeed"];
   const [selectedPerilType, setSelectedPerilType] = useState<string>(perilTypes[0]);
 
+  // Operator options
+  const operators = ["<=", "<", "=", ">", ">=", "between"];
+  
   // Template options
   const templateOptions = [
     "Rice Template 2023", 
@@ -51,54 +63,79 @@ const QuickTool = () => {
     "Pulses Template 2023"
   ];
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
+  
+  // New cover save dialog
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [newCoverName, setNewCoverName] = useState("");
 
   // Form state
   const [numPhases, setNumPhases] = useState<number>(3);
   const [numStrikes, setNumStrikes] = useState<number>(2);
   const [sameStrikeValues, setSameStrikeValues] = useState<boolean>(false);
-  const [perils, setPerils] = useState<PerilData[]>([{ phases: [] }]); // Always 1 peril now
+  const [sameStrikeBothPerils, setSameStrikeBothPerils] = useState<boolean>(false);
+  const [perils, setPerils] = useState<PerilData[]>([{ phases: [] }]);
 
   // Initialize form data when configuration changes
   useEffect(() => {
     const newPerils: PerilData[] = [];
     
-    // Only one peril now
-    const phases: PhaseData[] = [];
+    // For multiple perils, create two peril objects
+    const perilCount = isMultiPeril ? 2 : 1;
     
-    for (let phaseIndex = 0; phaseIndex < numPhases; phaseIndex++) {
-      // For phases after the first one, when sameStrikeValues is true, don't show strike fields
-      const shouldShowStrikes = !sameStrikeValues || phaseIndex === 0;
+    for (let perilIndex = 0; perilIndex < perilCount; perilIndex++) {
+      const phases: PhaseData[] = [];
       
-      const strikes: StrikeData[] = [];
-      
-      if (shouldShowStrikes) {
-        for (let strikeIndex = 0; strikeIndex < numStrikes; strikeIndex++) {
-          strikes.push({
-            strike: '',
-            notionalPayout: ''
+      // Skip phase creation for second peril if strikes should be the same
+      if (perilIndex === 1 && sameStrikeBothPerils) {
+        // For the second peril when sameStrikeBothPerils is true,
+        // only create phases with trigger fields
+        for (let phaseIndex = 0; phaseIndex < numPhases; phaseIndex++) {
+          phases.push({
+            triggers: ['', ''],
+            operator: operators[0],
+            strikes: [],
+            exit: '',
+            maxPayout: ''
+          });
+        }
+      } else {
+        for (let phaseIndex = 0; phaseIndex < numPhases; phaseIndex++) {
+          // For phases after the first one, when sameStrikeValues is true, don't show strike fields
+          const shouldShowStrikes = !sameStrikeValues || phaseIndex === 0;
+          
+          const strikes: StrikeData[] = [];
+          
+          if (shouldShowStrikes) {
+            for (let strikeIndex = 0; strikeIndex < numStrikes; strikeIndex++) {
+              strikes.push({
+                strike: '',
+                notionalPayout: ''
+              });
+            }
+          }
+          
+          phases.push({
+            triggers: ['', ''],
+            operator: operators[0],
+            strikes,
+            exit: shouldShowStrikes ? '' : '',
+            maxPayout: ''
           });
         }
       }
       
-      phases.push({
-        trigger: '',
-        strikes,
-        exit: shouldShowStrikes ? '' : '',
-        maxPayout: ''
-      });
+      newPerils.push({ phases });
     }
     
-    newPerils.push({ phases });
-    
     setPerils(newPerils);
-  }, [numPhases, numStrikes, sameStrikeValues]);
+  }, [numPhases, numStrikes, sameStrikeValues, sameStrikeBothPerils, isMultiPeril, operators]);
 
   // Handle value changes
   const handlePhaseInputChange = (
     perilIndex: number,
     phaseIndex: number,
     field: keyof PhaseData,
-    value: string
+    value: string | string[]
   ) => {
     const updatedPerils = [...perils];
     
@@ -107,6 +144,19 @@ const QuickTool = () => {
       updatedPerils[perilIndex].phases[phaseIndex][field] = value;
     }
     
+    setPerils(updatedPerils);
+  };
+
+  const handleTriggerChange = (
+    perilIndex: number,
+    phaseIndex: number,
+    triggerIndex: number,
+    value: string
+  ) => {
+    const updatedPerils = [...perils];
+    const triggers = [...updatedPerils[perilIndex].phases[phaseIndex].triggers];
+    triggers[triggerIndex] = value;
+    updatedPerils[perilIndex].phases[phaseIndex].triggers = triggers;
     setPerils(updatedPerils);
   };
 
@@ -127,9 +177,24 @@ const QuickTool = () => {
     setSameStrikeValues(checked);
   };
 
+  const handleSameStrikeBothPerilsChange = (checked: boolean) => {
+    setSameStrikeBothPerils(checked);
+  };
+
   // Handle template selection
   const handleTemplateSelect = (template: string) => {
     setSelectedTemplate(template);
+  };
+
+  // Handle save as new cover
+  const handleSaveAsNewCover = () => {
+    setSaveDialogOpen(true);
+  };
+
+  const handleSaveNewCover = () => {
+    console.log(`Saving new cover: ${newCoverName}`, perils);
+    setSaveDialogOpen(false);
+    setNewCoverName("");
   };
 
   return (
@@ -209,9 +274,34 @@ const QuickTool = () => {
               </div>
             </div>
 
+            {isMultiPeril && (
+              <div className="flex items-center mb-6">
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="sameStrikeBothPerils"
+                    checked={sameStrikeBothPerils}
+                    onCheckedChange={handleSameStrikeBothPerilsChange}
+                  />
+                  <label 
+                    htmlFor="sameStrikeBothPerils" 
+                    className="text-sm font-medium cursor-pointer"
+                  >
+                    Same strike value for both perils
+                  </label>
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center gap-3 mb-4">
               <Button className="bg-green-500 hover:bg-green-600">
                 Save as Template
+              </Button>
+              
+              <Button 
+                onClick={handleSaveAsNewCover}
+                className="bg-amber-500 hover:bg-amber-600"
+              >
+                Save as New Cover
               </Button>
               
               <div className="flex items-center gap-2 border rounded p-1 bg-white">
@@ -235,83 +325,167 @@ const QuickTool = () => {
 
           {perils.map((peril, perilIndex) => (
             <div key={perilIndex} className="mb-8">
+              {isMultiPeril && (
+                <h3 className="text-lg font-semibold mb-3 bg-blue-100 p-2 rounded-md">
+                  Peril {perilIndex + 1}
+                </h3>
+              )}
+              
               <div className="space-y-6">
-                <div className="grid grid-cols-3 gap-4 mb-2">
-                  {Array.from({ length: numPhases }).map((_, phaseIndex) => (
-                    <div key={phaseIndex} className="border rounded-md p-3">
-                      <h4 className="font-medium mb-3">Phase {phaseIndex + 1}</h4>
-                      
-                      <div className="mb-3">
-                        <Label className="text-xs mb-1 block">Phase Trigger</Label>
-                        <Input
-                          type="text"
-                          value={peril.phases[phaseIndex]?.trigger || ''}
-                          onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, 'trigger', e.target.value)}
-                          className="h-7 text-sm w-24"
-                          placeholder="e.g. 24°C"
-                        />
-                      </div>
-
-                      {/* Only show strikes for first phase if sameStrikeValues is true */}
-                      {(!sameStrikeValues || phaseIndex === 0) && (
-                        <>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
+                  {Array.from({ length: numPhases }).map((_, phaseIndex) => {
+                    // Skip rendering complete phase boxes for peril 2 if sameStrikeBothPerils is true
+                    if (perilIndex === 1 && sameStrikeBothPerils) {
+                      return (
+                        <div key={phaseIndex} className="border rounded-md p-3">
+                          <h4 className="font-medium mb-3">Phase {phaseIndex + 1}</h4>
+                          
                           <div className="mb-3">
-                            <Label className="text-xs mb-1 block">Strikes</Label>
-                            <div className="flex flex-wrap gap-2">
-                              {Array.from({ length: numStrikes }).map((_, strikeIndex) => (
-                                <Input
-                                  key={strikeIndex}
-                                  type="text"
-                                  value={peril.phases[phaseIndex]?.strikes[strikeIndex]?.strike || ''}
-                                  onChange={(e) => handleStrikeInputChange(perilIndex, phaseIndex, strikeIndex, 'strike', e.target.value)}
-                                  className="h-7 text-sm w-16"
-                                  placeholder={`Strike ${strikeIndex + 1}`}
-                                />
-                              ))}
-                            </div>
-                          </div>
-
-                          <div className="mb-3">
-                            <Label className="text-xs mb-1 block">Notional Payouts</Label>
-                            <div className="flex flex-wrap gap-2">
-                              {Array.from({ length: numStrikes }).map((_, strikeIndex) => (
-                                <Input
-                                  key={strikeIndex}
-                                  type="text"
-                                  value={peril.phases[phaseIndex]?.strikes[strikeIndex]?.notionalPayout || ''}
-                                  onChange={(e) => handleStrikeInputChange(perilIndex, phaseIndex, strikeIndex, 'notionalPayout', e.target.value)}
-                                  className="h-7 text-sm w-16"
-                                  placeholder={`Payout ${strikeIndex + 1}`}
-                                />
-                              ))}
-                            </div>
-                          </div>
-
-                          <div className="mb-3">
-                            <Label className="text-xs mb-1 block">Exit (°C)</Label>
+                            <Label className="text-xs mb-1 block">Phase Trigger 1</Label>
                             <Input
                               type="text"
-                              value={peril.phases[phaseIndex]?.exit || ''}
-                              onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, 'exit', e.target.value)}
+                              value={peril.phases[phaseIndex]?.triggers[0] || ''}
+                              onChange={(e) => handleTriggerChange(perilIndex, phaseIndex, 0, e.target.value)}
                               className="h-7 text-sm w-24"
-                              placeholder="e.g. 30"
+                              placeholder="e.g. 24°C"
                             />
                           </div>
-                        </>
-                      )}
+                          
+                          <div className="mb-3">
+                            <Label className="text-xs mb-1 block">Phase Trigger 2</Label>
+                            <Input
+                              type="text"
+                              value={peril.phases[phaseIndex]?.triggers[1] || ''}
+                              onChange={(e) => handleTriggerChange(perilIndex, phaseIndex, 1, e.target.value)}
+                              className="h-7 text-sm w-24"
+                              placeholder="e.g. 28°C"
+                            />
+                          </div>
+                          
+                          <div className="mb-3">
+                            <Label className="text-xs mb-1 block">Operator</Label>
+                            <Select 
+                              value={peril.phases[phaseIndex]?.operator || operators[0]}
+                              onValueChange={(value) => handlePhaseInputChange(perilIndex, phaseIndex, 'operator', value)}
+                            >
+                              <SelectTrigger className="h-7 text-sm w-24">
+                                <SelectValue placeholder="Select operator" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {operators.map((op) => (
+                                  <SelectItem key={op} value={op}>{op}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <div key={phaseIndex} className="border rounded-md p-3">
+                        <h4 className="font-medium mb-3">Phase {phaseIndex + 1}</h4>
+                        
+                        <div className="mb-3">
+                          <Label className="text-xs mb-1 block">Phase Trigger 1</Label>
+                          <Input
+                            type="text"
+                            value={peril.phases[phaseIndex]?.triggers[0] || ''}
+                            onChange={(e) => handleTriggerChange(perilIndex, phaseIndex, 0, e.target.value)}
+                            className="h-7 text-sm w-24"
+                            placeholder="e.g. 24°C"
+                          />
+                        </div>
+                        
+                        <div className="mb-3">
+                          <Label className="text-xs mb-1 block">Phase Trigger 2</Label>
+                          <Input
+                            type="text"
+                            value={peril.phases[phaseIndex]?.triggers[1] || ''}
+                            onChange={(e) => handleTriggerChange(perilIndex, phaseIndex, 1, e.target.value)}
+                            className="h-7 text-sm w-24"
+                            placeholder="e.g. 28°C"
+                          />
+                        </div>
+                        
+                        <div className="mb-3">
+                          <Label className="text-xs mb-1 block">Operator</Label>
+                          <Select 
+                            value={peril.phases[phaseIndex]?.operator || operators[0]}
+                            onValueChange={(value) => handlePhaseInputChange(perilIndex, phaseIndex, 'operator', value)}
+                          >
+                            <SelectTrigger className="h-7 text-sm w-24">
+                              <SelectValue placeholder="Select operator" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {operators.map((op) => (
+                                <SelectItem key={op} value={op}>{op}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
 
-                      <div className="mb-3">
-                        <Label className="text-xs mb-1 block">Maximum Payout per Ha. (Rs.)</Label>
-                        <Input
-                          type="text"
-                          value={peril.phases[phaseIndex]?.maxPayout || ''}
-                          onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, 'maxPayout', e.target.value)}
-                          className="h-7 text-sm w-24"
-                          placeholder="e.g. 5000"
-                        />
+                        {/* Only show strikes for first phase if sameStrikeValues is true */}
+                        {(!sameStrikeValues || phaseIndex === 0) && (
+                          <>
+                            <div className="mb-3">
+                              <Label className="text-xs mb-1 block">Strikes</Label>
+                              <div className="flex flex-wrap gap-2">
+                                {Array.from({ length: numStrikes }).map((_, strikeIndex) => (
+                                  <Input
+                                    key={strikeIndex}
+                                    type="text"
+                                    value={peril.phases[phaseIndex]?.strikes[strikeIndex]?.strike || ''}
+                                    onChange={(e) => handleStrikeInputChange(perilIndex, phaseIndex, strikeIndex, 'strike', e.target.value)}
+                                    className="h-7 text-sm w-16"
+                                    placeholder={`Strike ${strikeIndex + 1}`}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="mb-3">
+                              <Label className="text-xs mb-1 block">Notional Payouts</Label>
+                              <div className="flex flex-wrap gap-2">
+                                {Array.from({ length: numStrikes }).map((_, strikeIndex) => (
+                                  <Input
+                                    key={strikeIndex}
+                                    type="text"
+                                    value={peril.phases[phaseIndex]?.strikes[strikeIndex]?.notionalPayout || ''}
+                                    onChange={(e) => handleStrikeInputChange(perilIndex, phaseIndex, strikeIndex, 'notionalPayout', e.target.value)}
+                                    className="h-7 text-sm w-16"
+                                    placeholder={`Payout ${strikeIndex + 1}`}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+
+                            <div className="mb-3">
+                              <Label className="text-xs mb-1 block">Exit (°C)</Label>
+                              <Input
+                                type="text"
+                                value={peril.phases[phaseIndex]?.exit || ''}
+                                onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, 'exit', e.target.value)}
+                                className="h-7 text-sm w-24"
+                                placeholder="e.g. 30"
+                              />
+                            </div>
+                          </>
+                        )}
+
+                        <div className="mb-3">
+                          <Label className="text-xs mb-1 block">Maximum Payout per Ha. (Rs.)</Label>
+                          <Input
+                            type="text"
+                            value={peril.phases[phaseIndex]?.maxPayout || ''}
+                            onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, 'maxPayout', e.target.value)}
+                            className="h-7 text-sm w-24"
+                            placeholder="e.g. 5000"
+                          />
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -337,6 +511,44 @@ const QuickTool = () => {
           </div>
         </div>
       </div>
+
+      {/* Save New Cover Dialog */}
+      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Save as New Cover</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Cover Name
+              </Label>
+              <Input
+                id="name"
+                value={newCoverName}
+                onChange={(e) => setNewCoverName(e.target.value)}
+                className="col-span-3"
+                placeholder="Enter new cover name"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setSaveDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              onClick={handleSaveNewCover}
+              disabled={!newCoverName.trim()}
+            >
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

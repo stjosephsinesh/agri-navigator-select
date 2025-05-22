@@ -1,23 +1,11 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Upload, FileText, Database, ChevronDown } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
+import { Upload, FileText, Database } from 'lucide-react';
 
 const WeatherData = () => {
   const navigate = useNavigate();
-  const [selectedLevel, setSelectedLevel] = useState<string>('district');
-  
-  const calculationLevels = [
-    { value: 'district', label: 'District' },
-    { value: 'zone', label: 'Zone' },
-    { value: 'taluka', label: 'Taluka/Mandal' },
-    { value: 'gramPanchayat', label: 'Gram Panchayat' },
-    { value: 'latlong', label: 'Latitude/Longitude' },
-  ];
   
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -26,30 +14,8 @@ const WeatherData = () => {
       </div>
 
       <div className="bg-white p-6 rounded-b-lg shadow-md">
-        <div className="flex justify-between items-center mb-6">
+        <div className="mb-6">
           <p className="text-gray-600">Upload or input your weather data to continue.</p>
-          
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2">
-                {calculationLevels.find(level => level.value === selectedLevel)?.label || 'Select Level'}
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80">
-              <div className="space-y-4">
-                <h4 className="font-medium text-sm">Choose the level to calculate burn cost for</h4>
-                <RadioGroup value={selectedLevel} onValueChange={setSelectedLevel}>
-                  {calculationLevels.map((level) => (
-                    <div key={level.value} className="flex items-center space-x-2">
-                      <RadioGroupItem value={level.value} id={level.value} />
-                      <Label htmlFor={level.value}>{level.label}</Label>
-                    </div>
-                  ))}
-                </RadioGroup>
-              </div>
-            </PopoverContent>
-          </Popover>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
