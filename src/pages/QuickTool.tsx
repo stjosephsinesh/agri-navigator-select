@@ -33,6 +33,7 @@ interface StrikeData {
 
 interface PhaseData {
   trigger: string;
+  trigger2: string;
   operator: string;
   strikes: StrikeData[];
   exit: string;
@@ -102,6 +103,7 @@ const QuickTool = () => {
         for (let phaseIndex = 0; phaseIndex < numPhases; phaseIndex++) {
           phases.push({
             trigger: '',
+            trigger2: '', // Added second trigger field
             operator: operators[0],
             strikes: [],
             exit: '',
@@ -128,6 +130,7 @@ const QuickTool = () => {
           
           phases.push({
             trigger: '',
+            trigger2: '', // Added second trigger field
             operator: operators[0],
             strikes,
             exit: shouldShowStrikes ? '' : '',
@@ -384,13 +387,22 @@ const QuickTool = () => {
                                 
                                 <div className="mb-3">
                                   <Label className="text-xs mb-1 block">Phase Trigger</Label>
-                                  <Input
-                                    type="text"
-                                    value={peril.phases[phaseIndex]?.trigger || ''}
-                                    onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, 'trigger', e.target.value)}
-                                    className="h-7 text-sm w-24"
-                                    placeholder="e.g. 24°C"
-                                  />
+                                  <div className="flex gap-2">
+                                    <Input
+                                      type="text"
+                                      value={peril.phases[phaseIndex]?.trigger || ''}
+                                      onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, 'trigger', e.target.value)}
+                                      className="h-7 text-sm w-20"
+                                      placeholder="Trigger 1"
+                                    />
+                                    <Input
+                                      type="text"
+                                      value={peril.phases[phaseIndex]?.trigger2 || ''}
+                                      onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, 'trigger2', e.target.value)}
+                                      className="h-7 text-sm w-20"
+                                      placeholder="Trigger 2"
+                                    />
+                                  </div>
                                 </div>
                                 
                                 <div className="mb-3">
@@ -439,13 +451,22 @@ const QuickTool = () => {
                               
                               <div className="mb-3">
                                 <Label className="text-xs mb-1 block">Phase Trigger</Label>
-                                <Input
-                                  type="text"
-                                  value={peril.phases[phaseIndex]?.trigger || ''}
-                                  onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, 'trigger', e.target.value)}
-                                  className="h-7 text-sm w-24"
-                                  placeholder="e.g. 24°C"
-                                />
+                                <div className="flex gap-2">
+                                  <Input
+                                    type="text"
+                                    value={peril.phases[phaseIndex]?.trigger || ''}
+                                    onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, 'trigger', e.target.value)}
+                                    className="h-7 text-sm w-20"
+                                    placeholder="Trigger 1"
+                                  />
+                                  <Input
+                                    type="text"
+                                    value={peril.phases[phaseIndex]?.trigger2 || ''}
+                                    onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, 'trigger2', e.target.value)}
+                                    className="h-7 text-sm w-20"
+                                    placeholder="Trigger 2"
+                                  />
+                                </div>
                               </div>
                               
                               <div className="mb-3">
@@ -559,13 +580,22 @@ const QuickTool = () => {
                         
                         <div className="mb-3">
                           <Label className="text-xs mb-1 block">Phase Trigger</Label>
-                          <Input
-                            type="text"
-                            value={peril.phases[phaseIndex]?.trigger || ''}
-                            onChange={(e) => handlePhaseInputChange(0, phaseIndex, 'trigger', e.target.value)}
-                            className="h-7 text-sm w-24"
-                            placeholder="e.g. 24°C"
-                          />
+                          <div className="flex gap-2">
+                            <Input
+                              type="text"
+                              value={peril.phases[phaseIndex]?.trigger || ''}
+                              onChange={(e) => handlePhaseInputChange(0, phaseIndex, 'trigger', e.target.value)}
+                              className="h-7 text-sm w-20"
+                              placeholder="Trigger 1"
+                            />
+                            <Input
+                              type="text"
+                              value={peril.phases[phaseIndex]?.trigger2 || ''}
+                              onChange={(e) => handlePhaseInputChange(0, phaseIndex, 'trigger2', e.target.value)}
+                              className="h-7 text-sm w-20"
+                              placeholder="Trigger 2"
+                            />
+                          </div>
                         </div>
                         
                         <div className="mb-3">
