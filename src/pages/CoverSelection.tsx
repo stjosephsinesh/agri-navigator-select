@@ -122,6 +122,17 @@ const CoverSelection = () => {
     );
   };
 
+  // Get all selected covers across all categories
+  const getAllSelectedCovers = () => {
+    const allSelected: { category: string; cover: string }[] = [];
+    Object.entries(selectedCovers).forEach(([category, covers]) => {
+      covers.forEach(cover => {
+        allSelected.push({ category, cover });
+      });
+    });
+    return allSelected;
+  };
+
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <div className="bg-blue-500 text-white p-4 rounded-t-lg flex justify-between items-center">
@@ -486,6 +497,37 @@ const CoverSelection = () => {
               </AccordionContent>
             </AccordionItem>
           </Accordion>
+        </div>
+
+        {/* Selected Covers Section */}
+        <div className="mt-8 mb-6">
+          <div className="bg-gray-50 border rounded-lg p-4">
+            <h3 className="text-lg font-semibold mb-3 text-gray-800">Selected Covers</h3>
+            <div className="max-h-40 overflow-y-auto">
+              {getAllSelectedCovers().length === 0 ? (
+                <p className="text-gray-500 text-sm">No covers selected yet</p>
+              ) : (
+                <div className="space-y-2">
+                  {getAllSelectedCovers().map(({ category, cover }, index) => (
+                    <div key={index} className="flex items-center justify-between bg-white p-2 rounded border">
+                      <div className="flex-1">
+                        <span className="text-sm font-medium text-gray-700">{cover}</span>
+                        <span className="text-xs text-gray-500 ml-2">({category})</span>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-red-500 hover:text-red-700 h-6 w-6 p-0"
+                        onClick={() => handleCoverToggle(category, cover)}
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="flex justify-end mt-6">
