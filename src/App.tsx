@@ -1,48 +1,45 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Layout from "./components/Layout";
-import Dashboard from "./pages/Dashboard";
-import ProjectInfo from "./pages/ProjectInfo";
-import WeatherData from "./pages/WeatherData";
-import DataChecks from "./pages/DataChecks";
-import DistrictCropSelection from "./pages/DistrictCropSelection";
-import CoverSelection from "./pages/CoverSelection";
-import QuickTool from "./pages/QuickTool";
-import BurnCost from "./pages/BurnCost";
-import Summary from "./pages/Summary";
-import Users from "./pages/Users";
-import Help from "./pages/Help";
-import NotFound from "./pages/NotFound";
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Layout from './components/Layout';
+import Index from './pages/Index';
+import Dashboard from './pages/Dashboard';
+import ProjectInfo from './pages/ProjectInfo';
+import DistrictCropSelection from './pages/DistrictCropSelection';
+import CoverSelection from './pages/CoverSelection';
+import CustomCoverEditor from './pages/CustomCoverEditor';
+import QuickTool from './pages/QuickTool';
+import WeatherData from './pages/WeatherData';
+import DataChecks from './pages/DataChecks';
+import BurnCost from './pages/BurnCost';
+import Summary from './pages/Summary';
+import Users from './pages/Users';
+import Help from './pages/Help';
+import NotFound from './pages/NotFound';
+import './App.css';
 
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
+function App() {
+  return (
+    <Router>
+      <Layout>
         <Routes>
-          <Route path="/" element={<Layout><Dashboard /></Layout>} />
-          <Route path="/project-info" element={<Layout><ProjectInfo /></Layout>} />
-          <Route path="/weather-data" element={<Layout><WeatherData /></Layout>} />
-          <Route path="/data-checks" element={<Layout><DataChecks /></Layout>} />
-          <Route path="/district-crop-selection" element={<Layout><DistrictCropSelection /></Layout>} />
-          <Route path="/cover-selection" element={<Layout><CoverSelection /></Layout>} />
-          <Route path="/quick-tool" element={<Layout><QuickTool /></Layout>} />
-          <Route path="/burn-cost" element={<Layout><BurnCost /></Layout>} />
-          <Route path="/summary" element={<Layout><Summary /></Layout>} />
-          <Route path="/users" element={<Layout><Users /></Layout>} />
-          <Route path="/help" element={<Layout><Help /></Layout>} />
+          <Route path="/" element={<Index />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/project-info" element={<ProjectInfo />} />
+          <Route path="/district-crop-selection" element={<DistrictCropSelection />} />
+          <Route path="/cover-selection" element={<CoverSelection />} />
+          <Route path="/custom-cover-editor" element={<CustomCoverEditor />} />
+          <Route path="/quick-tool" element={<QuickTool />} />
+          <Route path="/weather-data" element={<WeatherData />} />
+          <Route path="/data-checks" element={<DataChecks />} />
+          <Route path="/burn-cost" element={<BurnCost />} />
+          <Route path="/summary" element={<Summary />} />
+          <Route path="/users" element={<Users />} />
+          <Route path="/help" element={<Help />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+      </Layout>
+    </Router>
+  );
+}
 
 export default App;

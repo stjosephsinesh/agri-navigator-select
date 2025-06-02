@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -23,7 +22,7 @@ import {
   AccordionTrigger 
 } from '@/components/ui/accordion';
 import { Umbrella, Thermometer, Check, Search, Plus, Edit, Trash, Copy } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const CoverSelection = () => {
   const [selectedCovers, setSelectedCovers] = useState<Record<string, string[]>>({
@@ -35,7 +34,20 @@ const CoverSelection = () => {
   });
   const [searchQuery, setSearchQuery] = useState('');
   const [autoLoad, setAutoLoad] = useState(false);
+  const [highlightedCover, setHighlightedCover] = useState<string>('');
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Check for highlighted cover from URL params
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const highlight = queryParams.get('highlight');
+    if (highlight) {
+      setHighlightedCover(decodeURIComponent(highlight));
+      // Clear the highlight after a few seconds
+      setTimeout(() => setHighlightedCover(''), 3000);
+    }
+  }, [location.search]);
   
   const coverCategories = {
     rainfall: [
@@ -131,6 +143,14 @@ const CoverSelection = () => {
       });
     });
     return allSelected;
+  };
+
+  const handleNewCover = () => {
+    navigate('/custom-cover-editor');
+  };
+
+  const handleEditCover = (coverName: string) => {
+    navigate(`/custom-cover-editor?edit=${encodeURIComponent(coverName)}`);
   };
 
   return (
@@ -439,7 +459,12 @@ const CoverSelection = () => {
                       Custom Covers
                     </AccordionTrigger>
                     <div className="ml-4 flex items-center gap-2">
-                      <Button size="sm" variant="outline" className="h-7 text-xs flex items-center gap-1">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="h-7 text-xs flex items-center gap-1"
+                        onClick={handleNewCover}
+                      >
                         <Plus size={14} /> New Cover
                       </Button>
                       <div className="relative">
@@ -469,7 +494,9 @@ const CoverSelection = () => {
                   {filterCustomCovers().map((cover) => (
                     <div 
                       key={cover} 
-                      className="flex items-center gap-2 hover:bg-gray-100 rounded p-1 cursor-pointer"
+                      className={`flex items-center gap-2 hover:bg-gray-100 rounded p-1 cursor-pointer ${
+                        highlightedCover === cover ? 'bg-yellow-200 border-2 border-yellow-400' : ''
+                      }`}
                     >
                       <Checkbox
                         id={`customCovers-${cover}`}
@@ -484,7 +511,12 @@ const CoverSelection = () => {
                         {cover}
                       </label>
                       <div className="flex items-center gap-2">
-                        <Button size="sm" variant="ghost" className="text-blue-500 p-1 h-7">
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="text-blue-500 p-1 h-7"
+                          onClick={() => handleEditCover(cover)}
+                        >
                           <Edit size={16} />
                         </Button>
                         <Button size="sm" variant="ghost" className="text-red-500 p-1 h-7">
