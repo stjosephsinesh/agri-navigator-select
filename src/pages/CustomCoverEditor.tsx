@@ -11,7 +11,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Check } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 interface CustomCover {
@@ -45,31 +45,23 @@ const CustomCoverEditor = () => {
   const queryParams = new URLSearchParams(location.search);
   const editCoverName = queryParams.get('edit');
   const isEditing = !!editCoverName;
+  const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
 
   const [coverData, setCoverData] = useState<CustomCover>({
     id: '',
     name: '',
     description: '',
     phases: 1,
-    conditionOperator: 'A and B',
+    conditionOperator: 'A',
     payoutType1: 'Rate',
     payoutType2: 'Single',
-    numberOfPerils: 2,
+    numberOfPerils: 1,
     perils: [
       {
         id: 1,
         type: 'Maximum Temperature',
         coverDefinitions: [
           { type: 'Absolute value', parameter: 'Trigger1', operator: '<' },
-          { type: 'No. Consecutive days', parameter: 'Strike1', operator: '>=' },
-          { type: 'Select', parameter: 'Select', operator: 'Select' }
-        ]
-      },
-      {
-        id: 2,
-        type: 'Humidity',
-        coverDefinitions: [
-          { type: 'Absolute value', parameter: 'Trigger2', operator: '>' },
           { type: 'No. Consecutive days', parameter: 'Strike1', operator: '>=' },
           { type: 'Select', parameter: 'Select', operator: 'Select' }
         ]
@@ -82,11 +74,70 @@ const CustomCoverEditor = () => {
     }
   });
 
+  // Generate conditional operators based on number of perils
+  const getConditionalOperators = (perilCount: number) => {
+    switch (perilCount) {
+      case 1:
+        return ['A'];
+      case 2:
+        return ['A and B', 'A or B'];
+      case 3:
+        return [
+          'A and (B or C)',
+          'A or (B and C)',
+          '(A and B) or C',
+          '(A or B) and C',
+          'A or B or C',
+          'A and B and C'
+        ];
+      default:
+        return ['A'];
+    }
+  };
+
+  // Update perils when numberOfPerils changes
+  useEffect(() => {
+    const currentPerilCount = coverData.perils.length;
+    const newPerilCount = coverData.numberOfPerils;
+    
+    if (currentPerilCount !== newPerilCount) {
+      const perilTypes = ['Maximum Temperature', 'Minimum Temperature', 'Humidity', 'Rainfall', 'Wind Speed'];
+      
+      if (newPerilCount > currentPerilCount) {
+        // Add new perils
+        const newPerils = [...coverData.perils];
+        for (let i = currentPerilCount; i < newPerilCount; i++) {
+          newPerils.push({
+            id: i + 1,
+            type: perilTypes[i % perilTypes.length],
+            coverDefinitions: [
+              { type: 'Absolute value', parameter: `Trigger${i + 1}`, operator: '<' },
+              { type: 'No. Consecutive days', parameter: 'Strike1', operator: '>=' },
+              { type: 'Select', parameter: 'Select', operator: 'Select' }
+            ]
+          });
+        }
+        setCoverData(prev => ({ ...prev, perils: newPerils }));
+      } else {
+        // Remove excess perils
+        setCoverData(prev => ({ 
+          ...prev, 
+          perils: prev.perils.slice(0, newPerilCount) 
+        }));
+      }
+      
+      // Update conditional operator to first available option
+      const operators = getConditionalOperators(newPerilCount);
+      setCoverData(prev => ({ 
+        ...prev, 
+        conditionOperator: operators[0] 
+      }));
+    }
+  }, [coverData.numberOfPerils]);
+
   // Load existing cover data if editing
   useEffect(() => {
     if (isEditing && editCoverName) {
-      // In a real app, this would load from a database or API
-      // For now, we'll populate with default data and set the name
       setCoverData(prev => ({
         ...prev,
         id: editCoverName,
@@ -141,15 +192,23 @@ const CustomCoverEditor = () => {
   };
 
   const handleSave = () => {
-    // In a real app, this would save to a database or API
     console.log('Saving cover:', coverData);
     
-    // Navigate back to cover selection with the new/edited cover name
-    navigate(`/cover-selection?highlight=${encodeURIComponent(coverData.name)}`);
+    // Store the cover in localStorage to simulate saving
+    const existingCovers = JSON.parse(localStorage.getItem('customCovers') || '[]');
+    const updatedCovers = isEditing 
+      ? existingCovers.map((cover: any) => cover.name === editCoverName ? coverData : cover)
+      : [...existingCovers, coverData];
+    
+    localStorage.setItem('customCovers', JSON.stringify(updatedCovers));
+    
+    // Show save confirmation
+    setShowSaveConfirmation(true);
+    setTimeout(() => setShowSaveConfirmation(false), 2000);
   };
 
   const handleGoBack = () => {
-    navigate('/cover-selection');
+    navigate(`/cover-selection?highlight=${encodeURIComponent(coverData.name)}`);
   };
 
   const coverDefinitionTypes = ['Absolute value', 'No. Consecutive days', 'Select'];
@@ -158,7 +217,15 @@ const CustomCoverEditor = () => {
   const perilTypes = ['Maximum Temperature', 'Minimum Temperature', 'Humidity', 'Rainfall', 'Wind Speed'];
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
+    <div className="p-6 max-w-5xl mx-auto">
+      {/* Save Confirmation */}
+      {showSaveConfirmation && (
+        <div className="fixed top-4 right-4 bg-green-500 text-white p-3 rounded-lg shadow-lg flex items-center gap-2 z-50">
+          <Check size={20} />
+          Cover saved successfully!
+        </div>
+      )}
+
       <div className="bg-blue-500 text-white p-4 rounded-t-lg flex justify-between items-center">
         <h1 className="text-2xl font-bold">
           {isEditing ? 'Edit Custom Cover' : 'Create New Custom Cover'}
@@ -179,55 +246,55 @@ const CustomCoverEditor = () => {
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-b-lg shadow-md">
+      <div className="bg-white p-6 rounded-b-lg shadow-md space-y-6">
         {/* Header Information */}
-        <div className="bg-sky-200 p-4 rounded-lg mb-6">
-          <div className="grid grid-cols-2 gap-6">
+        <div className="bg-sky-100 p-4 rounded-lg">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left Column */}
             <div className="space-y-4">
               <div>
-                <Label className="block mb-2 font-medium">Cover Name</Label>
+                <Label className="block mb-2 font-medium text-sm">Cover Name</Label>
                 <Input
                   value={coverData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   placeholder="Enter cover name"
-                  className="w-full"
+                  className="w-full h-9"
                 />
               </div>
               
               <div>
-                <Label className="block mb-2 font-medium">Cover Description</Label>
+                <Label className="block mb-2 font-medium text-sm">Cover Description</Label>
                 <Textarea
                   value={coverData.description}
                   onChange={(e) => handleInputChange('description', e.target.value)}
                   placeholder="Enter cover description"
-                  className="w-full h-16"
+                  className="w-full h-20 resize-none"
                 />
               </div>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="block mb-2 font-medium">Phases</Label>
+                  <Label className="block mb-2 font-medium text-sm">Phases</Label>
                   <Input
                     type="number"
                     value={coverData.phases}
                     onChange={(e) => handleInputChange('phases', parseInt(e.target.value))}
                     min="1"
                     max="5"
-                    className="w-full"
+                    className="w-full h-9"
                   />
                 </div>
                 
                 <div>
-                  <Label className="block mb-2 font-medium">Condition Operator</Label>
-                  <Select value={coverData.conditionOperator} onValueChange={(value) => handleInputChange('conditionOperator', value)}>
-                    <SelectTrigger>
+                  <Label className="block mb-2 font-medium text-sm">Number of Perils</Label>
+                  <Select value={coverData.numberOfPerils.toString()} onValueChange={(value) => handleInputChange('numberOfPerils', parseInt(value))}>
+                    <SelectTrigger className="h-9">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="A and B">A and B</SelectItem>
-                      <SelectItem value="A or B">A or B</SelectItem>
-                      <SelectItem value="A and (B or C)">A and (B or C)</SelectItem>
+                      <SelectItem value="1">1</SelectItem>
+                      <SelectItem value="2">2</SelectItem>
+                      <SelectItem value="3">3</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -237,9 +304,23 @@ const CustomCoverEditor = () => {
             {/* Right Column */}
             <div className="space-y-4">
               <div>
-                <Label className="block mb-2 font-medium">Payout Type 1 - Rate / Benefit</Label>
+                <Label className="block mb-2 font-medium text-sm">Condition Operator</Label>
+                <Select value={coverData.conditionOperator} onValueChange={(value) => handleInputChange('conditionOperator', value)}>
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getConditionalOperators(coverData.numberOfPerils).map(operator => (
+                      <SelectItem key={operator} value={operator}>{operator}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label className="block mb-2 font-medium text-sm">Rate / Benefit</Label>
                 <Select value={coverData.payoutType1} onValueChange={(value) => handleInputChange('payoutType1', value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-9">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -250,9 +331,9 @@ const CustomCoverEditor = () => {
               </div>
               
               <div>
-                <Label className="block mb-2 font-medium">Payout Type 2 - Single / Multiple</Label>
+                <Label className="block mb-2 font-medium text-sm">Single / Multiple</Label>
                 <Select value={coverData.payoutType2} onValueChange={(value) => handleInputChange('payoutType2', value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-9">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -261,37 +342,24 @@ const CustomCoverEditor = () => {
                   </SelectContent>
                 </Select>
               </div>
-              
-              <div>
-                <Label className="block mb-2 font-medium">Number of Perils</Label>
-                <Select value={coverData.numberOfPerils.toString()} onValueChange={(value) => handleInputChange('numberOfPerils', parseInt(value))}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1</SelectItem>
-                    <SelectItem value="2">2</SelectItem>
-                    <SelectItem value="3">3</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
           </div>
         </div>
 
         {/* Perils Section */}
-        <div className="space-y-6">
-          {coverData.perils.slice(0, coverData.numberOfPerils).map((peril, perilIndex) => (
-            <div key={peril.id} className="border border-gray-300 rounded-lg">
-              <div className="bg-gray-100 p-3 border-b">
-                <h3 className="text-lg font-semibold">Peril {peril.id}</h3>
+        <div className="space-y-4">
+          {coverData.perils.map((peril, perilIndex) => (
+            <div key={peril.id} className="border border-gray-200 rounded-lg overflow-hidden">
+              <div className="bg-gray-50 p-3 border-b border-gray-200">
+                <h3 className="text-base font-semibold text-gray-800">Peril {peril.id}</h3>
               </div>
               
               <div className="p-4">
-                <div className="grid grid-cols-5 gap-4 mb-4">
-                  <div className="font-medium">
+                <div className="grid grid-cols-4 gap-3 mb-4 text-sm">
+                  <div>
+                    <Label className="block mb-2 font-medium text-sm">Peril Type</Label>
                     <Select value={peril.type} onValueChange={(value) => handlePerilChange(perilIndex, 'type', value)}>
-                      <SelectTrigger>
+                      <SelectTrigger className="h-9">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -301,21 +369,20 @@ const CustomCoverEditor = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="font-medium text-center">Cover Definition</div>
-                  <div className="font-medium text-center">Parameter</div>
-                  <div className="font-medium text-center">Operator</div>
-                  <div></div>
+                  <div className="font-medium text-center flex items-end pb-2">Cover Definition</div>
+                  <div className="font-medium text-center flex items-end pb-2">Parameter</div>
+                  <div className="font-medium text-center flex items-end pb-2">Operator</div>
                 </div>
                 
                 {peril.coverDefinitions.map((def, defIndex) => (
-                  <div key={defIndex} className="grid grid-cols-5 gap-4 mb-2">
+                  <div key={defIndex} className="grid grid-cols-4 gap-3 mb-3">
                     <div></div>
                     <div>
                       <Select 
                         value={def.type} 
                         onValueChange={(value) => handleCoverDefinitionChange(perilIndex, defIndex, 'type', value)}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="h-9">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -330,7 +397,7 @@ const CustomCoverEditor = () => {
                         value={def.parameter} 
                         onValueChange={(value) => handleCoverDefinitionChange(perilIndex, defIndex, 'parameter', value)}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="h-9">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -345,7 +412,7 @@ const CustomCoverEditor = () => {
                         value={def.operator} 
                         onValueChange={(value) => handleCoverDefinitionChange(perilIndex, defIndex, 'operator', value)}
                       >
-                        <SelectTrigger>
+                        <SelectTrigger className="h-9">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -355,7 +422,6 @@ const CustomCoverEditor = () => {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div></div>
                   </div>
                 ))}
               </div>
@@ -364,15 +430,15 @@ const CustomCoverEditor = () => {
         </div>
 
         {/* Actions Section */}
-        <div className="mt-6 bg-gray-50 p-4 rounded-lg">
-          <div className="grid grid-cols-2 gap-6">
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
-              <h3 className="font-semibold mb-3">Then</h3>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="w-8">A =</span>
+              <h3 className="font-semibold mb-3 text-base">Then</h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <span className="w-8 text-sm font-medium">A =</span>
                   <Select value={coverData.actions.A} onValueChange={(value) => handleActionChange('A', value)}>
-                    <SelectTrigger className="flex-1">
+                    <SelectTrigger className="flex-1 h-9">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -382,38 +448,42 @@ const CustomCoverEditor = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-8">B =</span>
-                  <Select value={coverData.actions.B} onValueChange={(value) => handleActionChange('B', value)}>
-                    <SelectTrigger className="flex-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Select">Select</SelectItem>
-                      <SelectItem value="Action 1">Action 1</SelectItem>
-                      <SelectItem value="Action 2">Action 2</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <span className="text-sm text-gray-600">of A</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-8">C =</span>
-                  <Select value={coverData.actions.C} onValueChange={(value) => handleActionChange('C', value)}>
-                    <SelectTrigger className="flex-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Select">Select</SelectItem>
-                      <SelectItem value="Action 1">Action 1</SelectItem>
-                      <SelectItem value="Action 2">Action 2</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <span className="text-sm text-gray-600">of B</span>
-                </div>
+                {coverData.numberOfPerils >= 2 && (
+                  <div className="flex items-center gap-3">
+                    <span className="w-8 text-sm font-medium">B =</span>
+                    <Select value={coverData.actions.B} onValueChange={(value) => handleActionChange('B', value)}>
+                      <SelectTrigger className="flex-1 h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Select">Select</SelectItem>
+                        <SelectItem value="Action 1">Action 1</SelectItem>
+                        <SelectItem value="Action 2">Action 2</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <span className="text-sm text-gray-600">of A</span>
+                  </div>
+                )}
+                {coverData.numberOfPerils >= 3 && (
+                  <div className="flex items-center gap-3">
+                    <span className="w-8 text-sm font-medium">C =</span>
+                    <Select value={coverData.actions.C} onValueChange={(value) => handleActionChange('C', value)}>
+                      <SelectTrigger className="flex-1 h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Select">Select</SelectItem>
+                        <SelectItem value="Action 1">Action 1</SelectItem>
+                        <SelectItem value="Action 2">Action 2</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <span className="text-sm text-gray-600">of B</span>
+                  </div>
+                )}
               </div>
             </div>
             <div>
-              <h3 className="font-semibold mb-3">Action</h3>
+              <h3 className="font-semibold mb-3 text-base">Action</h3>
               <div className="text-sm text-gray-600">
                 Configure the actions that will be triggered based on the peril conditions.
               </div>

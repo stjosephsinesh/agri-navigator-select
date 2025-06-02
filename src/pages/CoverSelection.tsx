@@ -35,8 +35,16 @@ const CoverSelection = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [autoLoad, setAutoLoad] = useState(false);
   const [highlightedCover, setHighlightedCover] = useState<string>('');
+  const [customCovers, setCustomCovers] = useState<string[]>([]);
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Load custom covers from localStorage
+  useEffect(() => {
+    const savedCovers = JSON.parse(localStorage.getItem('customCovers') || '[]');
+    const coverNames = savedCovers.map((cover: any) => cover.name).filter((name: string) => name);
+    setCustomCovers(coverNames);
+  }, [location.pathname]); // Reload when navigating back to this page
   
   // Check for highlighted cover from URL params
   useEffect(() => {
@@ -70,13 +78,6 @@ const CoverSelection = () => {
       "Cover 3 - Other",
       "Cover 4 - Other",
       "Cover 5 - Other"
-    ],
-    customCovers: [
-      "Cover 1 - Custom",
-      "Cover 2 - Custom",
-      "Cover 3 - Custom",
-      "Cover 4 - Custom",
-      "Cover 5 - Custom"
     ],
     multiplePeril: [
       "MPeril1 - Temperature & Rainfall",
@@ -128,8 +129,8 @@ const CoverSelection = () => {
   };
 
   const filterCustomCovers = () => {
-    if (!searchQuery) return coverCategories.customCovers;
-    return coverCategories.customCovers.filter(cover => 
+    if (!searchQuery) return customCovers;
+    return customCovers.filter(cover => 
       cover.toLowerCase().includes(searchQuery.toLowerCase())
     );
   };
@@ -151,6 +152,19 @@ const CoverSelection = () => {
 
   const handleEditCover = (coverName: string) => {
     navigate(`/custom-cover-editor?edit=${encodeURIComponent(coverName)}`);
+  };
+
+  const handleDeleteCover = (coverName: string) => {
+    const savedCovers = JSON.parse(localStorage.getItem('customCovers') || '[]');
+    const updatedCovers = savedCovers.filter((cover: any) => cover.name !== coverName);
+    localStorage.setItem('customCovers', JSON.stringify(updatedCovers));
+    setCustomCovers(updatedCovers.map((cover: any) => cover.name));
+    
+    // Remove from selected covers if it was selected
+    setSelectedCovers(prev => ({
+      ...prev,
+      customCovers: prev.customCovers.filter(c => c !== coverName)
+    }));
   };
 
   return (
@@ -491,40 +505,57 @@ const CoverSelection = () => {
               </div>
               <AccordionContent className="mt-0 pt-0 border border-t-0 rounded-b-md">
                 <div className="p-2 space-y-2">
-                  {filterCustomCovers().map((cover) => (
-                    <div 
-                      key={cover} 
-                      className={`flex items-center gap-2 hover:bg-gray-100 rounded p-1 cursor-pointer ${
-                        highlightedCover === cover ? 'bg-yellow-200 border-2 border-yellow-400' : ''
-                      }`}
-                    >
-                      <Checkbox
-                        id={`customCovers-${cover}`}
-                        checked={selectedCovers.customCovers.includes(cover)}
-                        onCheckedChange={() => handleCoverToggle('customCovers', cover)}
-                        className="mr-2"
-                      />
-                      <label
-                        htmlFor={`customCovers-${cover}`}
-                        className="text-sm text-gray-700 leading-tight cursor-pointer flex-grow"
-                      >
-                        {cover}
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="ghost" 
-                          className="text-blue-500 p-1 h-7"
-                          onClick={() => handleEditCover(cover)}
-                        >
-                          <Edit size={16} />
-                        </Button>
-                        <Button size="sm" variant="ghost" className="text-red-500 p-1 h-7">
-                          <Trash size={16} />
-                        </Button>
-                      </div>
+                  {filterCustomCovers().length === 0 ? (
+                    <div className="text-center py-4 text-gray-500">
+                      No custom covers found. Click "New Cover" to create one.
                     </div>
-                  ))}
+                  ) : (
+                    filterCustomCovers().map((cover) => (
+                      <div 
+                        key={cover} 
+                        className={`flex items-center gap-2 hover:bg-gray-100 rounded p-1 cursor-pointer ${
+                          highlightedCover === cover ? 'bg-yellow-200 border-2 border-yellow-400' : ''
+                        }`}
+                      >
+                        <Checkbox
+                          id={`customCovers-${cover}`}
+                          checked={selectedCovers.customCovers.includes(cover)}
+                          onCheckedChange={() => handleCoverToggle('customCovers', cover)}
+                          className="mr-2"
+                        />
+                        <label
+                          htmlFor={`customCovers-${cover}`}
+                          className="text-sm text-gray-700 leading-tight cursor-pointer flex-grow"
+                        >
+                          {cover}
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="text-blue-500 p-1 h-7"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditCover(cover);
+                            }}
+                          >
+                            <Edit size={16} />
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            className="text-red-500 p-1 h-7"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteCover(cover);
+                            }}
+                          >
+                            <Trash size={16} />
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </AccordionContent>
             </AccordionItem>
