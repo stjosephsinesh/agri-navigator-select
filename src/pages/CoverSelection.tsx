@@ -36,6 +36,7 @@ const CoverSelection = () => {
   const [autoLoad, setAutoLoad] = useState(false);
   const [highlightedCover, setHighlightedCover] = useState<string>('');
   const [customCovers, setCustomCovers] = useState<string[]>([]);
+  const [expandedSections, setExpandedSections] = useState<string[]>(['rainfall']);
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -46,17 +47,28 @@ const CoverSelection = () => {
     setCustomCovers(coverNames);
   }, [location.pathname]); // Reload when navigating back to this page
   
-  // Check for highlighted cover from URL params
+  // Check for highlighted cover and expand parameter from URL params
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
     const highlight = queryParams.get('highlight');
+    const expand = queryParams.get('expand');
+    
     if (highlight) {
       setHighlightedCover(decodeURIComponent(highlight));
-      // Clear the highlight after a few seconds
-      setTimeout(() => setHighlightedCover(''), 3000);
+      // Clear the highlight after 7 seconds
+      setTimeout(() => setHighlightedCover(''), 7000);
+    }
+    
+    if (expand) {
+      setExpandedSections(prev => {
+        if (!prev.includes(expand)) {
+          return [...prev, expand];
+        }
+        return prev;
+      });
     }
   }, [location.search]);
-  
+
   const coverCategories = {
     rainfall: [
       "Consecutive N day's rainfall in excess of TRIGGER1 plus subsequent day's rainfall if it is greater than TRIGGER2 (in subsequent day's rainfall M days gap is allowed) - Rate",
@@ -283,7 +295,7 @@ const CoverSelection = () => {
         <p className="text-lg mb-6">Select cover options for your crop.</p>
         
         <div className="space-y-4">
-          <Accordion type="multiple" defaultValue={["rainfall"]}>
+          <Accordion type="multiple" value={expandedSections} onValueChange={setExpandedSections}>
             <AccordionItem value="rainfall" className="border-0">
               <div className="bg-sky-200 rounded-t-md">
                 <div className="flex justify-between items-center p-2">
@@ -513,8 +525,8 @@ const CoverSelection = () => {
                     filterCustomCovers().map((cover) => (
                       <div 
                         key={cover} 
-                        className={`flex items-center gap-2 hover:bg-gray-100 rounded p-1 cursor-pointer ${
-                          highlightedCover === cover ? 'bg-yellow-200 border-2 border-yellow-400' : ''
+                        className={`flex items-center gap-2 hover:bg-gray-100 rounded p-1 cursor-pointer transition-all duration-300 ${
+                          highlightedCover === cover ? 'bg-yellow-200 border-2 border-yellow-400 animate-pulse' : ''
                         }`}
                       >
                         <Checkbox

@@ -95,6 +95,16 @@ const CustomCoverEditor = () => {
     }
   };
 
+  // Generate dynamic parameter options based on number of perils
+  const getParameterOptions = (numberOfPerils: number) => {
+    const options = ['Select'];
+    for (let i = 1; i <= numberOfPerils; i++) {
+      options.push(`Trigger${i}`);
+      options.push(`Strike${i}`);
+    }
+    return options;
+  };
+
   // Update perils when numberOfPerils changes
   useEffect(() => {
     const currentPerilCount = coverData.perils.length;
@@ -138,12 +148,19 @@ const CustomCoverEditor = () => {
   // Load existing cover data if editing
   useEffect(() => {
     if (isEditing && editCoverName) {
-      setCoverData(prev => ({
-        ...prev,
-        id: editCoverName,
-        name: editCoverName,
-        description: `Description for ${editCoverName}`
-      }));
+      const existingCovers = JSON.parse(localStorage.getItem('customCovers') || '[]');
+      const coverToEdit = existingCovers.find((cover: any) => cover.name === editCoverName);
+      
+      if (coverToEdit) {
+        setCoverData(coverToEdit);
+      } else {
+        setCoverData(prev => ({
+          ...prev,
+          id: editCoverName,
+          name: editCoverName,
+          description: `Description for ${editCoverName}`
+        }));
+      }
     }
   }, [isEditing, editCoverName]);
 
@@ -208,11 +225,10 @@ const CustomCoverEditor = () => {
   };
 
   const handleGoBack = () => {
-    navigate(`/cover-selection?highlight=${encodeURIComponent(coverData.name)}`);
+    navigate(`/cover-selection?highlight=${encodeURIComponent(coverData.name)}&expand=customCovers`);
   };
 
   const coverDefinitionTypes = ['Absolute value', 'No. Consecutive days', 'Select'];
-  const parameterOptions = ['Trigger1', 'Trigger2', 'Strike1', 'Select'];
   const operatorOptions = ['<', '<=', '=', '>', '>=', 'Select'];
   const perilTypes = ['Maximum Temperature', 'Minimum Temperature', 'Humidity', 'Rainfall', 'Wind Speed'];
 
@@ -401,7 +417,7 @@ const CustomCoverEditor = () => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {parameterOptions.map(param => (
+                          {getParameterOptions(coverData.numberOfPerils).map(param => (
                             <SelectItem key={param} value={param}>{param}</SelectItem>
                           ))}
                         </SelectContent>
