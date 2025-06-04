@@ -55,10 +55,10 @@ const CoverSelection = () => {
   const [selectedCovers, setSelectedCovers] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedSections, setExpandedSections] = useState({
-    rainfall: false,
-    temperature: false,
+    rainfall: true,
+    temperature: true,
     multiplePeril: true,
-    otherCovers: false,
+    otherCovers: true,
     customCovers: true,
   });
 
@@ -95,14 +95,11 @@ const CoverSelection = () => {
     );
   };
 
-  const handleUncheckAll = (sectionCovers: Cover[]) => {
-    const coverNames = sectionCovers.map(cover => cover.name);
-    setSelectedCovers(prev => prev.filter(name => !coverNames.includes(name)));
-  };
-
-  const getSelectedCount = (sectionCovers: Cover[]) => {
-    const coverNames = sectionCovers.map(cover => cover.name);
-    return selectedCovers.filter(name => coverNames.includes(name)).length;
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
   };
 
   const filteredCustomCovers = customCovers.filter(cover =>
@@ -116,38 +113,28 @@ const CoverSelection = () => {
     sectionKey: keyof typeof expandedSections,
     bgColor: string
   ) => (
-    <Collapsible 
-      open={expandedSections[sectionKey]} 
-      onOpenChange={(open) => setExpandedSections(prev => ({...prev, [sectionKey]: open}))}
-    >
-      <CollapsibleTrigger className="w-full">
-        <div className={`flex items-center justify-between p-3 rounded ${bgColor} hover:opacity-80 transition-opacity`}>
-          <div className="flex items-center">
-            <span className="mr-2">{icon}</span>
-            <span className="font-medium">{title}</span>
-            {expandedSections[sectionKey] ? <ChevronUp className="ml-2" /> : <ChevronDown className="ml-2" />}
-          </div>
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleUncheckAll(covers);
-              }}
-            >
-              Uncheck All
-            </Button>
-            <span className="text-sm">{getSelectedCount(covers)} covers selected</span>
-          </div>
+    <div className="border rounded-lg overflow-hidden">
+      <button
+        onClick={() => toggleSection(sectionKey)}
+        className={`w-full flex items-center justify-between p-4 ${bgColor} hover:opacity-90 transition-opacity`}
+      >
+        <div className="flex items-center">
+          <span className="text-2xl mr-3">{icon}</span>
+          <span className="font-semibold text-lg">{title}</span>
         </div>
-      </CollapsibleTrigger>
-      <CollapsibleContent>
-        <div className="mt-2 space-y-2">
+        {expandedSections[sectionKey] ? (
+          <ChevronUp className="h-5 w-5" />
+        ) : (
+          <ChevronDown className="h-5 w-5" />
+        )}
+      </button>
+      
+      {expandedSections[sectionKey] && (
+        <div className="p-4 bg-white">
           {covers.map((cover, index) => (
             <div
               key={index}
-              className={`flex items-center p-3 bg-white border rounded hover:bg-gray-50 transition-colors ${
+              className={`flex items-center p-3 border rounded mb-2 last:mb-0 hover:bg-gray-50 transition-colors ${
                 highlightedCover === cover.name ? 'ring-2 ring-blue-400 bg-blue-50' : ''
               }`}
             >
@@ -163,36 +150,36 @@ const CoverSelection = () => {
             </div>
           ))}
         </div>
-      </CollapsibleContent>
-    </Collapsible>
+      )}
+    </div>
   );
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-blue-500 text-white p-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Cover Selection</h1>
-          <Button variant="outline" className="bg-transparent border-white text-white hover:bg-white hover:text-blue-500">
+      <div className="bg-blue-600 text-white p-6">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Cover Selection</h1>
+          <Button variant="outline" className="bg-transparent border-white text-white hover:bg-white hover:text-blue-600">
             Copy Templates
           </Button>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="mb-6">
-          <div className="flex items-center mb-4">
-            <Checkbox id="autoLoad" className="mr-2" />
-            <label htmlFor="autoLoad" className="text-sm">
+      <div className="max-w-6xl mx-auto p-6">
+        <div className="mb-8">
+          <div className="flex items-center mb-6">
+            <Checkbox id="autoLoad" className="mr-3" />
+            <label htmlFor="autoLoad" className="text-base">
               Auto load the previous template selections for district-crop combo.
             </label>
           </div>
           
-          <div className="text-center mb-6">
-            <h2 className="text-lg font-medium">Select cover options for your crop.</h2>
+          <div className="text-center mb-8">
+            <h2 className="text-xl font-medium text-gray-700">Select cover options for your crop.</h2>
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {renderCoverSection(
             'Rainfall',
             '🌧️',
@@ -206,7 +193,7 @@ const CoverSelection = () => {
             '🌡️',
             temperatureCovers,
             'temperature',
-            'bg-yellow-100'
+            'bg-orange-100'
           )}
 
           {renderCoverSection(
@@ -224,99 +211,88 @@ const CoverSelection = () => {
             'otherCovers',
             'bg-green-100'
           )}
+        </div>
 
-          {/* Custom Covers Section */}
-          <Collapsible 
-            open={expandedSections.customCovers} 
-            onOpenChange={(open) => setExpandedSections(prev => ({...prev, customCovers: open}))}
+        {/* Custom Covers Section */}
+        <div className="border rounded-lg overflow-hidden mb-8">
+          <button
+            onClick={() => toggleSection('customCovers')}
+            className="w-full flex items-center justify-between p-4 bg-gray-100 hover:opacity-90 transition-opacity"
           >
-            <CollapsibleTrigger className="w-full">
-              <div className="flex items-center justify-between p-3 rounded bg-gray-100 hover:opacity-80 transition-opacity">
-                <div className="flex items-center">
-                  <span className="mr-2">⚙️</span>
-                  <span className="font-medium">Custom Covers</span>
-                  {expandedSections.customCovers ? <ChevronUp className="ml-2" /> : <ChevronDown className="ml-2" />}
-                </div>
-                <div className="flex items-center gap-4">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleUncheckAll(filteredCustomCovers);
-                    }}
-                  >
-                    Uncheck All
-                  </Button>
-                  <span className="text-sm">{getSelectedCount(filteredCustomCovers)} covers selected</span>
+            <div className="flex items-center">
+              <span className="text-2xl mr-3">⚙️</span>
+              <span className="font-semibold text-lg">Custom Covers</span>
+            </div>
+            {expandedSections.customCovers ? (
+              <ChevronUp className="h-5 w-5" />
+            ) : (
+              <ChevronDown className="h-5 w-5" />
+            )}
+          </button>
+          
+          {expandedSections.customCovers && (
+            <div className="p-4 bg-white">
+              <div className="flex items-center gap-3 mb-4">
+                <Button 
+                  onClick={() => setManageDialogOpen(true)}
+                  className="bg-blue-600 hover:bg-blue-700"
+                  size="sm"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Manage
+                </Button>
+                <div className="flex-1">
+                  <Input
+                    type="search"
+                    placeholder="Search covers..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full"
+                  />
                 </div>
               </div>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="mt-2">
-                <div className="flex items-center gap-2 mb-3">
-                  <Button 
-                    onClick={() => setManageDialogOpen(true)}
-                    className="bg-purple-600 hover:bg-purple-700"
-                    size="sm"
+              
+              {filteredCustomCovers.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">No custom covers created yet.</p>
+              ) : (
+                filteredCustomCovers.map((cover, index) => (
+                  <div
+                    key={index}
+                    className={`flex items-center p-3 border rounded mb-2 last:mb-0 hover:bg-gray-50 transition-colors ${
+                      highlightedCover === cover.name ? 'ring-2 ring-blue-400 bg-blue-50' : ''
+                    }`}
                   >
-                    <Settings className="h-4 w-4 mr-2" />
-                    Manage
-                  </Button>
-                  <div className="flex-1">
-                    <Input
-                      type="search"
-                      placeholder="Search covers..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full"
+                    <Checkbox
+                      checked={selectedCovers.includes(cover.name)}
+                      onCheckedChange={() => handleCoverSelect(cover.name)}
+                      className="mr-3"
                     />
+                    <div className="flex-1">
+                      <p className="font-medium">{cover.name}</p>
+                      <p className="text-sm text-gray-600">{cover.description}</p>
+                    </div>
                   </div>
-                </div>
-                
-                <div className="space-y-2">
-                  {filteredCustomCovers.length === 0 ? (
-                    <p className="text-gray-500 text-center py-4">No custom covers created yet.</p>
-                  ) : (
-                    filteredCustomCovers.map((cover, index) => (
-                      <div
-                        key={index}
-                        className={`flex items-center p-3 bg-white border rounded hover:bg-gray-50 transition-colors ${
-                          highlightedCover === cover.name ? 'ring-2 ring-blue-400 bg-blue-50' : ''
-                        }`}
-                      >
-                        <Checkbox
-                          checked={selectedCovers.includes(cover.name)}
-                          onCheckedChange={() => handleCoverSelect(cover.name)}
-                          className="mr-3"
-                        />
-                        <div className="flex-1">
-                          <p className="font-medium">{cover.name}</p>
-                          <p className="text-sm text-gray-600">{cover.description}</p>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
+                ))
+              )}
+            </div>
+          )}
         </div>
 
         {/* Selected Covers Summary */}
-        <div className="mt-8 bg-white p-6 rounded-lg border">
-          <h3 className="text-lg font-medium mb-4">Selected Covers</h3>
+        <div className="bg-white p-6 rounded-lg border shadow-sm mb-8">
+          <h3 className="text-xl font-semibold mb-4 text-gray-800">Selected Covers Summary</h3>
           {selectedCovers.length === 0 ? (
-            <p className="text-gray-500">No covers selected yet</p>
+            <p className="text-gray-500 text-center py-4">No covers selected yet</p>
           ) : (
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {selectedCovers.map((coverName, index) => (
-                <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                  <span>{coverName}</span>
+                <div key={index} className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded">
+                  <span className="font-medium text-blue-800">{coverName}</span>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleCoverSelect(coverName)}
+                    className="text-blue-600 hover:text-blue-800"
                   >
                     Remove
                   </Button>
@@ -326,9 +302,9 @@ const CoverSelection = () => {
           )}
         </div>
 
-        <div className="flex justify-end mt-8">
+        <div className="flex justify-end">
           <Button 
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-blue-600 hover:bg-blue-700 px-8 py-3 text-lg"
             onClick={() => navigate('/quick-tool')}
           >
             Continue
@@ -337,7 +313,7 @@ const CoverSelection = () => {
       </div>
 
       <Dialog open={manageDialogOpen} onOpenChange={setManageDialogOpen}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Manage Custom Covers</DialogTitle>
           </DialogHeader>
