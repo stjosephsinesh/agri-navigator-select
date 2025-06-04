@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -376,11 +375,11 @@ const CustomCoverManager = () => {
                             <SelectValue placeholder="Operator" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="<"><</SelectItem>
-                            <SelectItem value=">">></SelectItem>
-                            <SelectItem value=">=">=</SelectItem>
-                            <SelectItem value="<=">=</SelectItem>
-                            <SelectItem value="=">=</SelectItem>
+                            <SelectItem value="less than">{"<"}</SelectItem>
+                            <SelectItem value="greater than">{">"}</SelectItem>
+                            <SelectItem value="greater than or equal">{">="}</SelectItem>
+                            <SelectItem value="less than or equal">{"<="}</SelectItem>
+                            <SelectItem value="equal">{"="}</SelectItem>
                             <SelectItem value="Select">Select</SelectItem>
                           </SelectContent>
                         </Select>
