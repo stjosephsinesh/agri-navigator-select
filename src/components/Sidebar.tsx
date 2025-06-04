@@ -13,7 +13,7 @@ const Sidebar = () => {
   };
 
   const menuItems = [
-    { title: 'Dashboard', icon: '📊', path: '/' },
+    { title: 'Dashboard', icon: '📊', path: '/dashboard' },
     { title: 'Project Info', icon: '📝', path: '/project-info' },
     { title: 'Weather Data Input', icon: '🌤️', path: '/weather-data' },
     { title: 'Data Checks', icon: '✓', path: '/data-checks' },

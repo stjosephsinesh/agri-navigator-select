@@ -22,10 +22,10 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Settings } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import CustomCoverManager from '@/components/CustomCoverManager';
 
-// Define types for the form state
 interface StrikeData {
   strike: string;
   notionalPayout: string;
@@ -47,21 +47,17 @@ interface PerilData {
 }
 
 const QuickTool = () => {
-  // Extract cover name from URL params
   const location = useLocation();
   const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
   const coverName = queryParams.get('cover') || "No cover selected";
   const isMultiPeril = queryParams.get('multiPeril') === 'true';
   
-  // Peril types dropdown
   const perilTypes = ["Rainfall", "Humidity", "Max Temp", "Min Temp", "Max Windspeed", "Min Windspeed"];
   const [selectedPerilType, setSelectedPerilType] = useState<string>(perilTypes[0]);
 
-  // Operator options
   const operators = ["<=", "<", "=", ">", ">=", "between"];
   
-  // Template options
   const templateOptions = [
     "Rice Template 2023", 
     "Wheat Template 2023", 
@@ -72,38 +68,35 @@ const QuickTool = () => {
   ];
   const [selectedTemplate, setSelectedTemplate] = useState<string>("");
   
-  // New cover save dialog
+  const [calculationMethod, setCalculationMethod] = useState<string>("Rate");
+  const [manageDialogOpen, setManageDialogOpen] = useState(false);
+  const [numTriggerBoxes, setNumTriggerBoxes] = useState<number>(1);
+  const [highlightedFields, setHighlightedFields] = useState<Set<string>>(new Set());
+  
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [newCoverName, setNewCoverName] = useState("");
 
-  // Form state
   const [numPhases, setNumPhases] = useState<number>(3);
   const [numStrikes, setNumStrikes] = useState<number>(2);
   const [sameStrikeValues, setSameStrikeValues] = useState<boolean>(false);
   const [sameStrikeBothPerils, setSameStrikeBothPerils] = useState<boolean>(false);
   const [perils, setPerils] = useState<PerilData[]>([{ phases: [] }]);
 
-  // Peril collapse states
   const [perilCollapseStates, setPerilCollapseStates] = useState<boolean[]>([true, true]);
 
-  // Initialize form data when configuration changes
   useEffect(() => {
     const newPerils: PerilData[] = [];
     
-    // For multiple perils, create two peril objects
     const perilCount = isMultiPeril ? 2 : 1;
     
     for (let perilIndex = 0; perilIndex < perilCount; perilIndex++) {
       const phases: PhaseData[] = [];
       
-      // Skip phase creation for second peril if strikes should be the same
       if (perilIndex === 1 && sameStrikeBothPerils) {
-        // For the second peril when sameStrikeBothPerils is true,
-        // only create phases with trigger fields
         for (let phaseIndex = 0; phaseIndex < numPhases; phaseIndex++) {
           phases.push({
             trigger: '',
-            trigger2: '', // Added second trigger field
+            trigger2: '',
             operator: operators[0],
             strikes: [],
             exit: '',
@@ -114,7 +107,6 @@ const QuickTool = () => {
         }
       } else {
         for (let phaseIndex = 0; phaseIndex < numPhases; phaseIndex++) {
-          // For phases after the first one, when sameStrikeValues is true, don't show strike fields
           const shouldShowStrikes = !sameStrikeValues || phaseIndex === 0;
           
           const strikes: StrikeData[] = [];
@@ -130,7 +122,7 @@ const QuickTool = () => {
           
           phases.push({
             trigger: '',
-            trigger2: '', // Added second trigger field
+            trigger2: '',
             operator: operators[0],
             strikes,
             exit: shouldShowStrikes ? '' : '',
@@ -147,7 +139,6 @@ const QuickTool = () => {
     setPerils(newPerils);
   }, [numPhases, numStrikes, sameStrikeValues, sameStrikeBothPerils, isMultiPeril, operators]);
 
-  // Handle value changes
   const handlePhaseInputChange = (
     perilIndex: number,
     phaseIndex: number,
@@ -157,11 +148,22 @@ const QuickTool = () => {
     const updatedPerils = [...perils];
     
     if (field !== 'strikes') {
-      // @ts-ignore - we know the field exists
+      // @ts-ignore
       updatedPerils[perilIndex].phases[phaseIndex][field] = value;
     }
     
     setPerils(updatedPerils);
+    
+    const fieldKey = `${perilIndex}-${phaseIndex}-${field}`;
+    setHighlightedFields(prev => new Set(prev).add(fieldKey));
+    
+    setTimeout(() => {
+      setHighlightedFields(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(fieldKey);
+        return newSet;
+      });
+    }, 3000);
   };
 
   const handleStrikeInputChange = (
@@ -174,9 +176,19 @@ const QuickTool = () => {
     const updatedPerils = [...perils];
     updatedPerils[perilIndex].phases[phaseIndex].strikes[strikeIndex][field] = value;
     setPerils(updatedPerils);
+    
+    const fieldKey = `${perilIndex}-${phaseIndex}-strike-${strikeIndex}-${field}`;
+    setHighlightedFields(prev => new Set(prev).add(fieldKey));
+    
+    setTimeout(() => {
+      setHighlightedFields(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(fieldKey);
+        return newSet;
+      });
+    }, 3000);
   };
 
-  // Handle checkbox changes
   const handleSameStrikeValuesChange = (checked: boolean) => {
     setSameStrikeValues(checked);
   };
@@ -185,12 +197,10 @@ const QuickTool = () => {
     setSameStrikeBothPerils(checked);
   };
 
-  // Handle template selection
   const handleTemplateSelect = (template: string) => {
     setSelectedTemplate(template);
   };
 
-  // Handle save as new cover
   const handleSaveAsNewCover = () => {
     setSaveDialogOpen(true);
   };
@@ -201,13 +211,16 @@ const QuickTool = () => {
     setNewCoverName("");
   };
 
-  // Handle peril collapse toggle
   const togglePerilCollapse = (perilIndex: number) => {
     setPerilCollapseStates(prev => {
       const newStates = [...prev];
       newStates[perilIndex] = !newStates[perilIndex];
       return newStates;
     });
+  };
+
+  const getFieldHighlight = (fieldKey: string) => {
+    return highlightedFields.has(fieldKey) ? "ring-2 ring-yellow-400 bg-yellow-50" : "";
   };
 
   return (
@@ -226,29 +239,44 @@ const QuickTool = () => {
           <div className="mb-8">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Quick Tool</h2>
-              <div className="flex items-center space-x-2">
-                <Label htmlFor="perilType" className="text-sm">Peril:</Label>
-                <Select value={selectedPerilType} onValueChange={setSelectedPerilType}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Select peril" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {perilTypes.map((peril) => (
-                      <SelectItem key={peril} value={peril}>{peril}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <Label htmlFor="perilType" className="text-sm">Peril:</Label>
+                  <Select value={selectedPerilType} onValueChange={setSelectedPerilType}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="Select peril" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {perilTypes.map((peril) => (
+                        <SelectItem key={peril} value={peril}>{peril}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Label htmlFor="calculationMethod" className="text-sm">Method:</Label>
+                  <Select value={calculationMethod} onValueChange={setCalculationMethod}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue placeholder="Select method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Rate">Rate</SelectItem>
+                      <SelectItem value="Benefit">Benefit</SelectItem>
+                      <SelectItem value="Combo">Combo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
             
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-1/2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div>
                 <Label htmlFor="numPhases" className="text-sm font-medium mb-1 block">Number of Phases</Label>
                 <select 
                   id="numPhases"
                   value={numPhases}
                   onChange={(e) => setNumPhases(Number(e.target.value))}
-                  className="w-full border rounded p-1 text-sm h-8"
+                  className="w-full border rounded p-2 text-sm h-9"
                 >
                   {[1, 2, 3, 4, 5].map(num => (
                     <option key={num} value={num}>{num}</option>
@@ -256,15 +284,29 @@ const QuickTool = () => {
                 </select>
               </div>
 
-              <div className="w-1/2">
+              <div>
                 <Label htmlFor="numStrikes" className="text-sm font-medium mb-1 block">Number of Strikes</Label>
                 <select 
                   id="numStrikes"
                   value={numStrikes}
                   onChange={(e) => setNumStrikes(Number(e.target.value))}
-                  className="w-full border rounded p-1 text-sm h-8"
+                  className="w-full border rounded p-2 text-sm h-9"
                 >
                   {[1, 2, 3, 4, 5].map(num => (
+                    <option key={num} value={num}>{num}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <Label htmlFor="numTriggerBoxes" className="text-sm font-medium mb-1 block">Trigger Boxes</Label>
+                <select 
+                  id="numTriggerBoxes"
+                  value={numTriggerBoxes}
+                  onChange={(e) => setNumTriggerBoxes(Number(e.target.value))}
+                  className="w-full border rounded p-2 text-sm h-9"
+                >
+                  {[1, 2, 3].map(num => (
                     <option key={num} value={num}>{num}</option>
                   ))}
                 </select>
@@ -282,7 +324,7 @@ const QuickTool = () => {
                   htmlFor="sameStrikeValues" 
                   className="text-sm font-medium cursor-pointer"
                 >
-                  Same strike values covering all phases collectively
+                  Same Strike Across All Phases
                 </label>
               </div>
             </div>
@@ -315,6 +357,14 @@ const QuickTool = () => {
                 className="bg-amber-500 hover:bg-amber-600"
               >
                 Save as New Cover
+              </Button>
+
+              <Button 
+                onClick={() => setManageDialogOpen(true)}
+                className="bg-purple-500 hover:bg-purple-600"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Manage
               </Button>
               
               <div className="flex items-center gap-2 border rounded p-1 bg-white">
@@ -358,195 +408,119 @@ const QuickTool = () => {
                   <CollapsibleContent className="mt-3">
                     <div className="space-y-6">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
-                        {Array.from({ length: numPhases }).map((_, phaseIndex) => {
-                          // Skip rendering complete phase boxes for peril 2 if sameStrikeBothPerils is true
-                          if (perilIndex === 1 && sameStrikeBothPerils) {
-                            return (
-                              <div key={phaseIndex} className="border rounded-md p-3">
-                                <h4 className="font-medium mb-3">Phase {phaseIndex + 1}</h4>
-                                
-                                <div className="mb-3">
-                                  <Label className="text-xs mb-1 block">Coverage Period</Label>
-                                  <div className="flex gap-2">
-                                    <Input
-                                      type="text"
-                                      value={peril.phases[phaseIndex]?.coveragePeriodFrom || ''}
-                                      onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, 'coveragePeriodFrom', e.target.value)}
-                                      className="h-7 text-sm w-20"
-                                      placeholder="From"
-                                    />
-                                    <Input
-                                      type="text"
-                                      value={peril.phases[phaseIndex]?.coveragePeriodTo || ''}
-                                      onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, 'coveragePeriodTo', e.target.value)}
-                                      className="h-7 text-sm w-20"
-                                      placeholder="To"
-                                    />
-                                  </div>
-                                </div>
-                                
-                                <div className="mb-3">
-                                  <Label className="text-xs mb-1 block">Phase Trigger</Label>
-                                  <div className="flex gap-2">
-                                    <Input
-                                      type="text"
-                                      value={peril.phases[phaseIndex]?.trigger || ''}
-                                      onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, 'trigger', e.target.value)}
-                                      className="h-7 text-sm w-20"
-                                      placeholder="Trigger 1"
-                                    />
-                                    <Input
-                                      type="text"
-                                      value={peril.phases[phaseIndex]?.trigger2 || ''}
-                                      onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, 'trigger2', e.target.value)}
-                                      className="h-7 text-sm w-20"
-                                      placeholder="Trigger 2"
-                                    />
-                                  </div>
-                                </div>
-                                
-                                <div className="mb-3">
-                                  <Label className="text-xs mb-1 block">Operator</Label>
-                                  <Select 
-                                    value={peril.phases[phaseIndex]?.operator || operators[0]}
-                                    onValueChange={(value) => handlePhaseInputChange(perilIndex, phaseIndex, 'operator', value)}
-                                  >
-                                    <SelectTrigger className="h-7 text-sm w-24">
-                                      <SelectValue placeholder="Select operator" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {operators.map((op) => (
-                                        <SelectItem key={op} value={op}>{op}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </div>
-                            );
-                          }
-                          
-                          return (
-                            <div key={phaseIndex} className="border rounded-md p-3">
-                              <h4 className="font-medium mb-3">Phase {phaseIndex + 1}</h4>
-                              
-                              <div className="mb-3">
-                                <Label className="text-xs mb-1 block">Coverage Period</Label>
-                                <div className="flex gap-2">
-                                  <Input
-                                    type="text"
-                                    value={peril.phases[phaseIndex]?.coveragePeriodFrom || ''}
-                                    onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, 'coveragePeriodFrom', e.target.value)}
-                                    className="h-7 text-sm w-20"
-                                    placeholder="From"
-                                  />
-                                  <Input
-                                    type="text"
-                                    value={peril.phases[phaseIndex]?.coveragePeriodTo || ''}
-                                    onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, 'coveragePeriodTo', e.target.value)}
-                                    className="h-7 text-sm w-20"
-                                    placeholder="To"
-                                  />
-                                </div>
-                              </div>
-                              
-                              <div className="mb-3">
-                                <Label className="text-xs mb-1 block">Phase Trigger</Label>
-                                <div className="flex gap-2">
-                                  <Input
-                                    type="text"
-                                    value={peril.phases[phaseIndex]?.trigger || ''}
-                                    onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, 'trigger', e.target.value)}
-                                    className="h-7 text-sm w-20"
-                                    placeholder="Trigger 1"
-                                  />
-                                  <Input
-                                    type="text"
-                                    value={peril.phases[phaseIndex]?.trigger2 || ''}
-                                    onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, 'trigger2', e.target.value)}
-                                    className="h-7 text-sm w-20"
-                                    placeholder="Trigger 2"
-                                  />
-                                </div>
-                              </div>
-                              
-                              <div className="mb-3">
-                                <Label className="text-xs mb-1 block">Operator</Label>
-                                <Select 
-                                  value={peril.phases[phaseIndex]?.operator || operators[0]}
-                                  onValueChange={(value) => handlePhaseInputChange(perilIndex, phaseIndex, 'operator', value)}
-                                >
-                                  <SelectTrigger className="h-7 text-sm w-24">
-                                    <SelectValue placeholder="Select operator" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {operators.map((op) => (
-                                      <SelectItem key={op} value={op}>{op}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-
-                              {/* Only show strikes for first phase if sameStrikeValues is true */}
-                              {(!sameStrikeValues || phaseIndex === 0) && (
-                                <>
-                                  <div className="mb-3">
-                                    <Label className="text-xs mb-1 block">Strikes</Label>
-                                    <div className="flex flex-wrap gap-2">
-                                      {Array.from({ length: numStrikes }).map((_, strikeIndex) => (
-                                        <Input
-                                          key={strikeIndex}
-                                          type="text"
-                                          value={peril.phases[phaseIndex]?.strikes[strikeIndex]?.strike || ''}
-                                          onChange={(e) => handleStrikeInputChange(perilIndex, phaseIndex, strikeIndex, 'strike', e.target.value)}
-                                          className="h-7 text-sm w-16"
-                                          placeholder={`Strike ${strikeIndex + 1}`}
-                                        />
-                                      ))}
-                                    </div>
-                                  </div>
-
-                                  <div className="mb-3">
-                                    <Label className="text-xs mb-1 block">Notional Payouts</Label>
-                                    <div className="flex flex-wrap gap-2">
-                                      {Array.from({ length: numStrikes }).map((_, strikeIndex) => (
-                                        <Input
-                                          key={strikeIndex}
-                                          type="text"
-                                          value={peril.phases[phaseIndex]?.strikes[strikeIndex]?.notionalPayout || ''}
-                                          onChange={(e) => handleStrikeInputChange(perilIndex, phaseIndex, strikeIndex, 'notionalPayout', e.target.value)}
-                                          className="h-7 text-sm w-16"
-                                          placeholder={`Payout ${strikeIndex + 1}`}
-                                        />
-                                      ))}
-                                    </div>
-                                  </div>
-
-                                  <div className="mb-3">
-                                    <Label className="text-xs mb-1 block">Exit (°C)</Label>
-                                    <Input
-                                      type="text"
-                                      value={peril.phases[phaseIndex]?.exit || ''}
-                                      onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, 'exit', e.target.value)}
-                                      className="h-7 text-sm w-24"
-                                      placeholder="e.g. 30"
-                                    />
-                                  </div>
-                                </>
-                              )}
-
-                              <div className="mb-3">
-                                <Label className="text-xs mb-1 block">Maximum Payout per Ha. (Rs.)</Label>
+                        {Array.from({ length: numPhases }).map((_, phaseIndex) => (
+                          <div key={phaseIndex} className="border rounded-md p-3">
+                            <h4 className="font-medium mb-3">Phase {phaseIndex + 1}</h4>
+                            
+                            <div className="mb-3">
+                              <Label className="text-xs mb-1 block">Coverage Period</Label>
+                              <div className="flex gap-2">
                                 <Input
                                   type="text"
-                                  value={peril.phases[phaseIndex]?.maxPayout || ''}
-                                  onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, 'maxPayout', e.target.value)}
-                                  className="h-7 text-sm w-24"
-                                  placeholder="e.g. 5000"
+                                  value={peril.phases[phaseIndex]?.coveragePeriodFrom || ''}
+                                  onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, 'coveragePeriodFrom', e.target.value)}
+                                  className={`h-7 text-sm w-20 ${getFieldHighlight(`${perilIndex}-${phaseIndex}-coveragePeriodFrom`)}`}
+                                  placeholder="From"
+                                />
+                                <Input
+                                  type="text"
+                                  value={peril.phases[phaseIndex]?.coveragePeriodTo || ''}
+                                  onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, 'coveragePeriodTo', e.target.value)}
+                                  className={`h-7 text-sm w-20 ${getFieldHighlight(`${perilIndex}-${phaseIndex}-coveragePeriodTo`)}`}
+                                  placeholder="To"
                                 />
                               </div>
                             </div>
-                          );
-                        })}
+                            
+                            <div className="mb-3">
+                              <Label className="text-xs mb-1 block">Phase Triggers</Label>
+                              <div className="space-y-1">
+                                {Array.from({ length: numTriggerBoxes }).map((_, triggerIndex) => (
+                                  <div key={triggerIndex} className="flex gap-1">
+                                    <Input
+                                      type="text"
+                                      value={triggerIndex === 0 ? (peril.phases[phaseIndex]?.trigger || '') : (peril.phases[phaseIndex]?.trigger2 || '')}
+                                      onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, triggerIndex === 0 ? 'trigger' : 'trigger2', e.target.value)}
+                                      className={`h-7 text-sm w-16 ${getFieldHighlight(`${perilIndex}-${phaseIndex}-trigger${triggerIndex + 1}`)}`}
+                                      placeholder={`T${triggerIndex + 1}`}
+                                    />
+                                    <Select 
+                                      value={peril.phases[phaseIndex]?.operator || operators[0]}
+                                      onValueChange={(value) => handlePhaseInputChange(perilIndex, phaseIndex, 'operator', value)}
+                                    >
+                                      <SelectTrigger className="h-7 text-sm w-16">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {operators.map((op) => (
+                                          <SelectItem key={op} value={op}>{op}</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {(!sameStrikeValues || phaseIndex === 0) && (
+                              <>
+                                <div className="mb-3">
+                                  <Label className="text-xs mb-1 block">Strikes</Label>
+                                  <div className="flex flex-wrap gap-2">
+                                    {Array.from({ length: numStrikes }).map((_, strikeIndex) => (
+                                      <Input
+                                        key={strikeIndex}
+                                        type="text"
+                                        value={peril.phases[phaseIndex]?.strikes[strikeIndex]?.strike || ''}
+                                        onChange={(e) => handleStrikeInputChange(perilIndex, phaseIndex, strikeIndex, 'strike', e.target.value)}
+                                        className={`h-7 text-sm w-16 ${getFieldHighlight(`${perilIndex}-${phaseIndex}-strike-${strikeIndex}-strike`)}`}
+                                        placeholder={`S${strikeIndex + 1}`}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+
+                                <div className="mb-3">
+                                  <Label className="text-xs mb-1 block">Notional Payouts</Label>
+                                  <div className="flex flex-wrap gap-2">
+                                    {Array.from({ length: numStrikes }).map((_, strikeIndex) => (
+                                      <Input
+                                        key={strikeIndex}
+                                        type="text"
+                                        value={peril.phases[phaseIndex]?.strikes[strikeIndex]?.notionalPayout || ''}
+                                        onChange={(e) => handleStrikeInputChange(perilIndex, phaseIndex, strikeIndex, 'notionalPayout', e.target.value)}
+                                        className={`h-7 text-sm w-16 ${getFieldHighlight(`${perilIndex}-${phaseIndex}-strike-${strikeIndex}-notionalPayout`)}`}
+                                        placeholder={`P${strikeIndex + 1}`}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+
+                                <div className="mb-3">
+                                  <Label className="text-xs mb-1 block">Exit (°C)</Label>
+                                  <Input
+                                    type="text"
+                                    value={peril.phases[phaseIndex]?.exit || ''}
+                                    onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, 'exit', e.target.value)}
+                                    className={`h-7 text-sm w-24 ${getFieldHighlight(`${perilIndex}-${phaseIndex}-exit`)}`}
+                                    placeholder="e.g. 30"
+                                  />
+                                </div>
+                              </>
+                            )}
+
+                            <div className="mb-3">
+                              <Label className="text-xs mb-1 block">Maximum Payout per Ha. (Rs.)</Label>
+                              <Input
+                                type="text"
+                                value={peril.phases[phaseIndex]?.maxPayout || ''}
+                                onChange={(e) => handlePhaseInputChange(perilIndex, phaseIndex, 'maxPayout', e.target.value)}
+                                className={`h-7 text-sm w-24 ${getFieldHighlight(`${perilIndex}-${phaseIndex}-maxPayout`)}`}
+                                placeholder="e.g. 5000"
+                              />
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </CollapsibleContent>
@@ -565,57 +539,49 @@ const QuickTool = () => {
                               type="text"
                               value={peril.phases[phaseIndex]?.coveragePeriodFrom || ''}
                               onChange={(e) => handlePhaseInputChange(0, phaseIndex, 'coveragePeriodFrom', e.target.value)}
-                              className="h-7 text-sm w-20"
+                              className={`h-7 text-sm w-20 ${getFieldHighlight(`0-${phaseIndex}-coveragePeriodFrom`)}`}
                               placeholder="From"
                             />
                             <Input
                               type="text"
                               value={peril.phases[phaseIndex]?.coveragePeriodTo || ''}
                               onChange={(e) => handlePhaseInputChange(0, phaseIndex, 'coveragePeriodTo', e.target.value)}
-                              className="h-7 text-sm w-20"
+                              className={`h-7 text-sm w-20 ${getFieldHighlight(`0-${phaseIndex}-coveragePeriodTo`)}`}
                               placeholder="To"
                             />
                           </div>
                         </div>
                         
                         <div className="mb-3">
-                          <Label className="text-xs mb-1 block">Phase Trigger</Label>
-                          <div className="flex gap-2">
-                            <Input
-                              type="text"
-                              value={peril.phases[phaseIndex]?.trigger || ''}
-                              onChange={(e) => handlePhaseInputChange(0, phaseIndex, 'trigger', e.target.value)}
-                              className="h-7 text-sm w-20"
-                              placeholder="Trigger 1"
-                            />
-                            <Input
-                              type="text"
-                              value={peril.phases[phaseIndex]?.trigger2 || ''}
-                              onChange={(e) => handlePhaseInputChange(0, phaseIndex, 'trigger2', e.target.value)}
-                              className="h-7 text-sm w-20"
-                              placeholder="Trigger 2"
-                            />
+                          <Label className="text-xs mb-1 block">Phase Triggers</Label>
+                          <div className="space-y-1">
+                            {Array.from({ length: numTriggerBoxes }).map((_, triggerIndex) => (
+                              <div key={triggerIndex} className="flex gap-1">
+                                <Input
+                                  type="text"
+                                  value={triggerIndex === 0 ? (peril.phases[phaseIndex]?.trigger || '') : (peril.phases[phaseIndex]?.trigger2 || '')}
+                                  onChange={(e) => handlePhaseInputChange(0, phaseIndex, triggerIndex === 0 ? 'trigger' : 'trigger2', e.target.value)}
+                                  className={`h-7 text-sm w-16 ${getFieldHighlight(`0-${phaseIndex}-trigger${triggerIndex + 1}`)}`}
+                                  placeholder={`T${triggerIndex + 1}`}
+                                />
+                                <Select 
+                                  value={peril.phases[phaseIndex]?.operator || operators[0]}
+                                  onValueChange={(value) => handlePhaseInputChange(0, phaseIndex, 'operator', value)}
+                                >
+                                  <SelectTrigger className="h-7 text-sm w-16">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {operators.map((op) => (
+                                      <SelectItem key={op} value={op}>{op}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            ))}
                           </div>
                         </div>
-                        
-                        <div className="mb-3">
-                          <Label className="text-xs mb-1 block">Operator</Label>
-                          <Select 
-                            value={peril.phases[phaseIndex]?.operator || operators[0]}
-                            onValueChange={(value) => handlePhaseInputChange(0, phaseIndex, 'operator', value)}
-                          >
-                            <SelectTrigger className="h-7 text-sm w-24">
-                              <SelectValue placeholder="Select operator" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {operators.map((op) => (
-                                <SelectItem key={op} value={op}>{op}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
 
-                        {/* Only show strikes for first phase if sameStrikeValues is true */}
                         {(!sameStrikeValues || phaseIndex === 0) && (
                           <>
                             <div className="mb-3">
@@ -627,8 +593,8 @@ const QuickTool = () => {
                                     type="text"
                                     value={peril.phases[phaseIndex]?.strikes[strikeIndex]?.strike || ''}
                                     onChange={(e) => handleStrikeInputChange(0, phaseIndex, strikeIndex, 'strike', e.target.value)}
-                                    className="h-7 text-sm w-16"
-                                    placeholder={`Strike ${strikeIndex + 1}`}
+                                    className={`h-7 text-sm w-16 ${getFieldHighlight(`0-${phaseIndex}-strike-${strikeIndex}-strike`)}`}
+                                    placeholder={`S${strikeIndex + 1}`}
                                   />
                                 ))}
                               </div>
@@ -643,8 +609,8 @@ const QuickTool = () => {
                                     type="text"
                                     value={peril.phases[phaseIndex]?.strikes[strikeIndex]?.notionalPayout || ''}
                                     onChange={(e) => handleStrikeInputChange(0, phaseIndex, strikeIndex, 'notionalPayout', e.target.value)}
-                                    className="h-7 text-sm w-16"
-                                    placeholder={`Payout ${strikeIndex + 1}`}
+                                    className={`h-7 text-sm w-16 ${getFieldHighlight(`0-${phaseIndex}-strike-${strikeIndex}-notionalPayout`)}`}
+                                    placeholder={`P${strikeIndex + 1}`}
                                   />
                                 ))}
                               </div>
@@ -656,7 +622,7 @@ const QuickTool = () => {
                                 type="text"
                                 value={peril.phases[phaseIndex]?.exit || ''}
                                 onChange={(e) => handlePhaseInputChange(0, phaseIndex, 'exit', e.target.value)}
-                                className="h-7 text-sm w-24"
+                                className={`h-7 text-sm w-24 ${getFieldHighlight(`0-${phaseIndex}-exit`)}`}
                                 placeholder="e.g. 30"
                               />
                             </div>
@@ -669,7 +635,7 @@ const QuickTool = () => {
                             type="text"
                             value={peril.phases[phaseIndex]?.maxPayout || ''}
                             onChange={(e) => handlePhaseInputChange(0, phaseIndex, 'maxPayout', e.target.value)}
-                            className="h-7 text-sm w-24"
+                            className={`h-7 text-sm w-24 ${getFieldHighlight(`0-${phaseIndex}-maxPayout`)}`}
                             placeholder="e.g. 5000"
                           />
                         </div>
@@ -702,7 +668,6 @@ const QuickTool = () => {
         </div>
       </div>
 
-      {/* Save New Cover Dialog */}
       <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -737,6 +702,17 @@ const QuickTool = () => {
               Save
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={manageDialogOpen} onOpenChange={setManageDialogOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Manage Custom Covers</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <CustomCoverManager />
+          </div>
         </DialogContent>
       </Dialog>
     </div>
