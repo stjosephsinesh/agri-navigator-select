@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +9,14 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { ChevronDown, ChevronRight, Check } from 'lucide-react';
+import { ChevronDown, ChevronRight, Settings } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import CustomCoverManager from '@/components/CustomCoverManager';
 
 interface Cover {
   name: string;
@@ -40,6 +48,7 @@ const CoverSelection = () => {
   const [filterMultiPeril, setFilterMultiPeril] = useState(false);
   const [customCovers, setCustomCovers] = useState<Cover[]>([]);
   const [highlightedCover, setHighlightedCover] = useState<string | null>(null);
+  const [manageDialogOpen, setManageDialogOpen] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     standardCovers: true,
     customCovers: true,
@@ -58,22 +67,21 @@ const CoverSelection = () => {
 
     if (highlight) {
       setHighlightedCover(decodeURIComponent(highlight));
+      setTimeout(() => {
+        setHighlightedCover(null);
+      }, 5000);
     }
 
-    if (expand) {
+    if (expand === 'customCovers') {
       setExpandedSections(prev => ({
         ...prev,
-        [expand]: true
+        customCovers: true
       }));
     }
   }, [location.search]);
 
   const handleCoverSelect = (coverName: string, isMultiPeril = false) => {
     navigate(`/quick-tool?cover=${encodeURIComponent(coverName)}&multiPeril=${isMultiPeril}`);
-  };
-
-  const handleNewCustomCover = () => {
-    navigate('/custom-cover-editor');
   };
 
   const filteredStandardCovers = standardCovers.filter(cover =>
@@ -105,7 +113,7 @@ const CoverSelection = () => {
               <Checkbox
                 id="filterMultiPeril"
                 checked={filterMultiPeril}
-                onCheckedChange={(checked) => setFilterMultiPeril(checked || false)}
+                onCheckedChange={(checked) => setFilterMultiPeril(!!checked)}
               />
               <label
                 htmlFor="filterMultiPeril"
@@ -170,10 +178,11 @@ const CoverSelection = () => {
                 <div className="mt-3">
                   <div className="mb-3">
                     <Button 
-                      onClick={handleNewCustomCover}
-                      className="bg-blue-600 hover:bg-blue-700"
+                      onClick={() => setManageDialogOpen(true)}
+                      className="bg-purple-600 hover:bg-purple-700"
                     >
-                      New Cover
+                      <Settings className="h-4 w-4 mr-2" />
+                      Manage
                     </Button>
                   </div>
                   <div className="space-y-2">
@@ -248,6 +257,17 @@ const CoverSelection = () => {
           </div>
         </div>
       </div>
+
+      <Dialog open={manageDialogOpen} onOpenChange={setManageDialogOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Manage Custom Covers</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <CustomCoverManager />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

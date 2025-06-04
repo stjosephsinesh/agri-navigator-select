@@ -35,6 +35,7 @@ interface PhaseData {
   trigger: string;
   trigger2: string;
   operator: string;
+  strikeOperator: string;
   strikes: StrikeData[];
   exit: string;
   maxPayout: string;
@@ -98,6 +99,7 @@ const QuickTool = () => {
             trigger: '',
             trigger2: '',
             operator: operators[0],
+            strikeOperator: operators[0],
             strikes: [],
             exit: '',
             maxPayout: '',
@@ -124,6 +126,7 @@ const QuickTool = () => {
             trigger: '',
             trigger2: '',
             operator: operators[0],
+            strikeOperator: operators[0],
             strikes,
             exit: shouldShowStrikes ? '' : '',
             maxPayout: '',
@@ -269,7 +272,7 @@ const QuickTool = () => {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <Label htmlFor="numPhases" className="text-sm font-medium mb-1 block">Number of Phases</Label>
                 <select 
@@ -293,20 +296,6 @@ const QuickTool = () => {
                   className="w-full border rounded p-2 text-sm h-9"
                 >
                   {[1, 2, 3, 4, 5].map(num => (
-                    <option key={num} value={num}>{num}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <Label htmlFor="numTriggerBoxes" className="text-sm font-medium mb-1 block">Trigger Boxes</Label>
-                <select 
-                  id="numTriggerBoxes"
-                  value={numTriggerBoxes}
-                  onChange={(e) => setNumTriggerBoxes(Number(e.target.value))}
-                  className="w-full border rounded p-2 text-sm h-9"
-                >
-                  {[1, 2, 3].map(num => (
                     <option key={num} value={num}>{num}</option>
                   ))}
                 </select>
@@ -357,14 +346,6 @@ const QuickTool = () => {
                 className="bg-amber-500 hover:bg-amber-600"
               >
                 Save as New Cover
-              </Button>
-
-              <Button 
-                onClick={() => setManageDialogOpen(true)}
-                className="bg-purple-500 hover:bg-purple-600"
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Manage
               </Button>
               
               <div className="flex items-center gap-2 border rounded p-1 bg-white">
@@ -464,6 +445,23 @@ const QuickTool = () => {
 
                             {(!sameStrikeValues || phaseIndex === 0) && (
                               <>
+                                <div className="mb-3">
+                                  <Label className="text-xs mb-1 block">Strike Operator</Label>
+                                  <Select 
+                                    value={peril.phases[phaseIndex]?.strikeOperator || operators[0]}
+                                    onValueChange={(value) => handlePhaseInputChange(perilIndex, phaseIndex, 'strikeOperator', value)}
+                                  >
+                                    <SelectTrigger className="h-7 text-sm w-20">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {operators.map((op) => (
+                                        <SelectItem key={op} value={op}>{op}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+
                                 <div className="mb-3">
                                   <Label className="text-xs mb-1 block">Strikes</Label>
                                   <div className="flex flex-wrap gap-2">
@@ -585,6 +583,23 @@ const QuickTool = () => {
                         {(!sameStrikeValues || phaseIndex === 0) && (
                           <>
                             <div className="mb-3">
+                              <Label className="text-xs mb-1 block">Strike Operator</Label>
+                              <Select 
+                                value={peril.phases[phaseIndex]?.strikeOperator || operators[0]}
+                                onValueChange={(value) => handlePhaseInputChange(0, phaseIndex, 'strikeOperator', value)}
+                              >
+                                <SelectTrigger className="h-7 text-sm w-20">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {operators.map((op) => (
+                                    <SelectItem key={op} value={op}>{op}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            <div className="mb-3">
                               <Label className="text-xs mb-1 block">Strikes</Label>
                               <div className="flex flex-wrap gap-2">
                                 {Array.from({ length: numStrikes }).map((_, strikeIndex) => (
@@ -702,17 +717,6 @@ const QuickTool = () => {
               Save
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={manageDialogOpen} onOpenChange={setManageDialogOpen}>
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Manage Custom Covers</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <CustomCoverManager />
-          </div>
         </DialogContent>
       </Dialog>
     </div>
