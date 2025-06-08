@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -12,6 +11,21 @@ import { Textarea } from '@/components/ui/textarea';
 const Dashboard = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [showAllProjects, setShowAllProjects] = useState(false);
+  
+  // Extended list of projects for the "View more" functionality
+  const allProjects = [
+    { name: "Rice - Kerala 2023", lastUpdated: "May 19, 2023" },
+    { name: "Wheat - Punjab 2023", lastUpdated: "April 12, 2023" },
+    { name: "Cotton - Gujarat 2023", lastUpdated: "March 30, 2023" },
+    { name: "Sugarcane - Maharashtra 2023", lastUpdated: "March 15, 2023" },
+    { name: "Soybean - Madhya Pradesh 2023", lastUpdated: "February 28, 2023" },
+    { name: "Corn - Karnataka 2023", lastUpdated: "February 20, 2023" },
+    { name: "Barley - Rajasthan 2023", lastUpdated: "February 10, 2023" },
+    { name: "Groundnut - Andhra Pradesh 2023", lastUpdated: "January 25, 2023" },
+  ];
+
+  const recentProjects = allProjects.slice(0, 3);
   
   return (
     <div className="p-6">
@@ -81,20 +95,43 @@ const Dashboard = () => {
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-lg font-semibold mb-3">Recent Projects</h2>
           <div className="space-y-2">
-            <div className="p-3 bg-gray-50 rounded border border-gray-100">
-              <p className="font-medium">Rice - Kerala 2023</p>
-              <p className="text-sm text-gray-500">Last updated: May 19, 2023</p>
-            </div>
-            <div className="p-3 bg-gray-50 rounded border border-gray-100">
-              <p className="font-medium">Wheat - Punjab 2023</p>
-              <p className="text-sm text-gray-500">Last updated: April 12, 2023</p>
-            </div>
-            <div className="p-3 bg-gray-50 rounded border border-gray-100">
-              <p className="font-medium">Cotton - Gujarat 2023</p>
-              <p className="text-sm text-gray-500">Last updated: March 30, 2023</p>
-            </div>
+            {recentProjects.map((project, index) => (
+              <div key={index} className="p-3 bg-gray-50 rounded border border-gray-100 cursor-pointer hover:bg-gray-100">
+                <p className="font-medium">{project.name}</p>
+                <p className="text-sm text-gray-500">Last updated: {project.lastUpdated}</p>
+              </div>
+            ))}
           </div>
+          
+          <Dialog open={showAllProjects} onOpenChange={setShowAllProjects}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="w-full mt-4">
+                View more
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-2xl max-h-[600px]">
+              <DialogHeader>
+                <DialogTitle>All Recent Projects</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                {allProjects.map((project, index) => (
+                  <div 
+                    key={index} 
+                    className="p-3 bg-gray-50 rounded border border-gray-100 cursor-pointer hover:bg-gray-100"
+                    onClick={() => {
+                      setShowAllProjects(false);
+                      navigate('/project-info');
+                    }}
+                  >
+                    <p className="font-medium">{project.name}</p>
+                    <p className="text-sm text-gray-500">Last updated: {project.lastUpdated}</p>
+                  </div>
+                ))}
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
+        
         
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-lg font-semibold mb-3">Quick Stats</h2>

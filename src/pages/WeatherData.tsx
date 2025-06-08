@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Upload, FileText, Database } from 'lucide-react';
+import { Upload, FileText } from 'lucide-react';
 
 const WeatherData = () => {
   const navigate = useNavigate();
@@ -15,11 +15,11 @@ const WeatherData = () => {
 
       <div className="bg-white p-6 rounded-b-lg shadow-md">
         <div className="mb-6">
-          <p className="text-gray-600">Upload or input your weather data to continue.</p>
+          <p className="text-gray-600">Upload your weather data to continue.</p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="border rounded-lg p-6 flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors">
+        <div className="flex justify-center mb-8">
+          <div className="border rounded-lg p-6 flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors w-full max-w-md">
             <Upload size={36} className="text-blue-500 mb-2" />
             <h3 className="text-lg font-medium mb-2">Upload CSV File</h3>
             <p className="text-sm text-gray-500 text-center mb-4">
@@ -27,17 +27,6 @@ const WeatherData = () => {
             </p>
             <Button className="bg-blue-500 hover:bg-blue-600">
               Select File
-            </Button>
-          </div>
-          
-          <div className="border rounded-lg p-6 flex flex-col items-center justify-center bg-gray-50 hover:bg-gray-100 cursor-pointer transition-colors">
-            <Database size={36} className="text-green-500 mb-2" />
-            <h3 className="text-lg font-medium mb-2">Import From Database</h3>
-            <p className="text-sm text-gray-500 text-center mb-4">
-              Connect and import data from your database
-            </p>
-            <Button className="bg-green-500 hover:bg-green-600">
-              Connect Database
             </Button>
           </div>
         </div>
