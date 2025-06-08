@@ -3,27 +3,23 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const DataChecks = () => {
   const navigate = useNavigate();
-  const [selectedGeoLevels, setSelectedGeoLevels] = useState<string[]>([]);
+  const [selectedGeoLevel, setSelectedGeoLevel] = useState<string>("District");
   
   // Geographic levels for output
   const geoLevels = [
     "District", "Zone", "Taluka/Mandal", "Gram Panchayat", "Latitude/Longitude"
   ];
-
-  const handleGeoLevelChange = (level: string) => {
-    setSelectedGeoLevels(prev => {
-      if (prev.includes(level)) {
-        return prev.filter(l => l !== level);
-      } else {
-        return [...prev, level];
-      }
-    });
-  };
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -57,27 +53,26 @@ const DataChecks = () => {
                 <p className="text-gray-600">Weather Stations: <span className="font-medium">45</span></p>
               </div>
             </div>
-          </div>
 
-          <div className="border p-4 rounded-md bg-blue-50">
-            <h3 className="font-medium text-blue-800 mb-2">Select the geographical level for output</h3>
-            <div className="space-y-2">
-              {geoLevels.map((level) => (
-                <div key={level} className="flex items-center space-x-2">
-                  <Checkbox 
-                    id={`geo-level-${level}`} 
-                    checked={selectedGeoLevels.includes(level)}
-                    onCheckedChange={() => handleGeoLevelChange(level)}
-                  />
-                  <Label htmlFor={`geo-level-${level}`}>{level}</Label>
-                </div>
-              ))}
-            </div>
-            {selectedGeoLevels.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-blue-200">
+              <h4 className="font-medium text-blue-800 mb-3">Select the geographical level for output</h4>
+              <div className="flex items-center gap-3">
+                <Label htmlFor="geo-level" className="text-sm font-medium">Geographic Level:</Label>
+                <Select value={selectedGeoLevel} onValueChange={setSelectedGeoLevel}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Select level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {geoLevels.map((level) => (
+                      <SelectItem key={level} value={level}>{level}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <p className="text-sm text-blue-600 mt-2">
-                Selected levels: {selectedGeoLevels.join(', ')}
+                Selected level: {selectedGeoLevel}
               </p>
-            )}
+            </div>
           </div>
         </div>
         
