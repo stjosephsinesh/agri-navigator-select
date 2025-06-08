@@ -1,19 +1,14 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from "@/components/ui/checkbox";
 import { useNavigate } from 'react-router-dom';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const DistrictCropSelection = () => {
   const [selectedDistricts, setSelectedDistricts] = useState<string[]>([]);
   const [selectedCrops, setSelectedCrops] = useState<string[]>([]);
   const [isDistrictDropdownOpen, setIsDistrictDropdownOpen] = useState<boolean>(false);
   const [isCropDropdownOpen, setIsCropDropdownOpen] = useState<boolean>(false);
-  const [selectedGeoLevels, setSelectedGeoLevels] = useState<Record<string, string>>({});
-  
-  // This would come from DataChecks page in a real app
-  const [availableGeoLevels] = useState(['District', 'Zone', 'Taluka/Mandal', 'Gram Panchayat']);
   
   const navigate = useNavigate();
   
@@ -24,14 +19,6 @@ const DistrictCropSelection = () => {
     "Mustard", "Tea", "Coffee", "Turmeric"
   ];
 
-  // Generate options based on the level
-  const generateOptions = (level: string, count: number = 5) => {
-    return Array.from({ length: count }, (_, i) => `${level.toLowerCase()}${i + 1}`);
-  };
-  
-  // Get the hierarchy of geo levels in the correct order
-  const geoLevelsHierarchy = availableGeoLevels.filter(level => level !== 'District');
-
   const handleDistrictToggle = (district: string) => {
     setSelectedDistricts(prev => {
       if (prev.includes(district)) {
@@ -40,9 +27,6 @@ const DistrictCropSelection = () => {
         return [...prev, district];
       }
     });
-    
-    // Reset selected geo levels when district changes
-    setSelectedGeoLevels({});
   };
 
   const handleCropToggle = (crop: string) => {
@@ -55,28 +39,10 @@ const DistrictCropSelection = () => {
     });
   };
 
-  const handleGeoLevelChange = (level: string, value: string) => {
-    setSelectedGeoLevels(prev => {
-      const newLevels = { ...prev };
-      
-      // If this level changes, reset all lower levels
-      const levelIndex = geoLevelsHierarchy.indexOf(level);
-      if (levelIndex >= 0) {
-        for (let i = levelIndex + 1; i < geoLevelsHierarchy.length; i++) {
-          delete newLevels[geoLevelsHierarchy[i]];
-        }
-      }
-      
-      newLevels[level] = value;
-      return newLevels;
-    });
-  };
-
   const handleProceed = () => {
     console.log("Proceeding with:", { 
       selectedDistricts, 
-      selectedCrops, 
-      selectedGeoLevels 
+      selectedCrops
     });
     navigate('/cover-selection');
   };
@@ -146,45 +112,6 @@ const DistrictCropSelection = () => {
             </div>
           )}
         </div>
-        
-        {/* Dynamic Geographical Levels */}
-        {selectedDistricts.length > 0 && geoLevelsHierarchy.map((level, index) => {
-          const previousLevel = index === 0 ? 'District' : geoLevelsHierarchy[index - 1];
-          const previousLevelSelected = index === 0 || selectedGeoLevels[previousLevel];
-          
-          if (!previousLevelSelected) return null;
-          
-          const options = generateOptions(level);
-          
-          return (
-            <div key={level} className="mb-6">
-              <h2 className="text-lg font-semibold mb-2">{level} Selection:</h2>
-              <Select 
-                value={selectedGeoLevels[level] || ''} 
-                onValueChange={(value) => handleGeoLevelChange(level, value)}
-              >
-                <SelectTrigger className="w-full max-w-sm">
-                  <SelectValue placeholder={`Select ${level}`} />
-                </SelectTrigger>
-                <SelectContent>
-                  {options.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              {selectedGeoLevels[level] && (
-                <div className="mt-2">
-                  <p className="text-sm text-gray-600">
-                    Selected {level}: <span className="font-medium">{selectedGeoLevels[level]}</span>
-                  </p>
-                </div>
-              )}
-            </div>
-          );
-        })}
 
         <div className="mb-6">
           <h2 className="text-lg font-semibold mb-2">Crop Selection:</h2>
