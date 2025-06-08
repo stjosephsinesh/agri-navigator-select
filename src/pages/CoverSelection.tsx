@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Settings } from 'lucide-react';
+import { Settings, ChevronDown, ChevronRight, Plus, Search } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from '@/components/ui/label';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import CustomCoverManager from '@/components/CustomCoverManager';
 
 interface Cover {
@@ -59,6 +60,13 @@ const CoverSelection = () => {
   const [selectedCovers, setSelectedCovers] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [autoLoadEnabled, setAutoLoadEnabled] = useState(false);
+
+  // Collapsible states - all collapsed by default
+  const [rainfallOpen, setRainfallOpen] = useState(false);
+  const [temperatureOpen, setTemperatureOpen] = useState(false);
+  const [multiPerilOpen, setMultiPerilOpen] = useState(false);
+  const [otherCoversOpen, setOtherCoversOpen] = useState(false);
+  const [customCoversOpen, setCustomCoversOpen] = useState(false);
 
   // Copy Templates state
   const [fromYear, setFromYear] = useState('2021');
@@ -127,21 +135,47 @@ const CoverSelection = () => {
     cover.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const renderCoverSection = (
+  const getSelectedCount = (covers: Cover[]) => {
+    return covers.filter(cover => selectedCovers.includes(cover.name)).length;
+  };
+
+  const renderCollapsibleSection = (
     title: string,
     icon: string,
     covers: Cover[],
+    isOpen: boolean,
+    setIsOpen: (open: boolean) => void,
     bgColor: string
   ) => (
-    <div className="border rounded-lg overflow-hidden mb-4">
-      <div className={`p-4 ${bgColor}`}>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="border rounded-lg overflow-hidden mb-2">
+      <CollapsibleTrigger className={`w-full flex items-center justify-between p-4 ${bgColor} hover:opacity-90 transition-opacity`}>
         <div className="flex items-center">
           <span className="text-2xl mr-3">{icon}</span>
           <span className="font-semibold text-lg">{title}</span>
+          {isOpen && getSelectedCount(covers) > 0 && (
+            <span className="ml-2 text-sm text-gray-600">({getSelectedCount(covers)} covers selected)</span>
+          )}
         </div>
-      </div>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              // Uncheck all covers in this section
+              const coverNames = covers.map(c => c.name);
+              setSelectedCovers(prev => prev.filter(name => !coverNames.includes(name)));
+            }}
+            className="text-xs"
+          >
+            Uncheck All
+          </Button>
+          <span className="text-sm text-gray-600">{getSelectedCount(covers)} covers selected</span>
+          {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+        </div>
+      </CollapsibleTrigger>
       
-      <div className="p-4 bg-white">
+      <CollapsibleContent className="p-4 bg-white">
         {covers.map((cover, index) => (
           <div
             key={index}
@@ -156,8 +190,8 @@ const CoverSelection = () => {
             </div>
           </div>
         ))}
-      </div>
-    </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 
   return (
@@ -194,45 +228,72 @@ const CoverSelection = () => {
           </div>
         </div>
 
-        <div className="mb-8">
-          {renderCoverSection(
+        <div className="mb-8 space-y-2">
+          {renderCollapsibleSection(
             'Rainfall',
             '🌧️',
             rainfallCovers,
+            rainfallOpen,
+            setRainfallOpen,
             'bg-blue-100'
           )}
 
-          {renderCoverSection(
+          {renderCollapsibleSection(
             'Temperature',
             '🌡️',
             temperatureCovers,
+            temperatureOpen,
+            setTemperatureOpen,
             'bg-orange-100'
           )}
 
-          {renderCoverSection(
+          {renderCollapsibleSection(
             'Multiple Peril',
             '🌀',
             multiplePerilCovers,
+            multiPerilOpen,
+            setMultiPerilOpen,
             'bg-purple-100'
           )}
 
-          {renderCoverSection(
+          {renderCollapsibleSection(
             'Other Covers',
             '🌿',
             otherCovers,
+            otherCoversOpen,
+            setOtherCoversOpen,
             'bg-green-100'
           )}
 
           {/* Custom Covers Section */}
-          <div className="border rounded-lg overflow-hidden">
-            <div className="p-4 bg-gray-100">
+          <Collapsible open={customCoversOpen} onOpenChange={setCustomCoversOpen} className="border rounded-lg overflow-hidden">
+            <CollapsibleTrigger className="w-full flex items-center justify-between p-4 bg-gray-100 hover:opacity-90 transition-opacity">
               <div className="flex items-center">
                 <span className="text-2xl mr-3">⚙️</span>
                 <span className="font-semibold text-lg">Custom Covers</span>
+                {customCoversOpen && getSelectedCount(filteredCustomCovers) > 0 && (
+                  <span className="ml-2 text-sm text-gray-600">({getSelectedCount(filteredCustomCovers)} covers selected)</span>
+                )}
               </div>
-            </div>
+              <div className="flex items-center gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const coverNames = filteredCustomCovers.map(c => c.name);
+                    setSelectedCovers(prev => prev.filter(name => !coverNames.includes(name)));
+                  }}
+                  className="text-xs"
+                >
+                  Uncheck All
+                </Button>
+                <span className="text-sm text-gray-600">{getSelectedCount(filteredCustomCovers)} covers selected</span>
+                {customCoversOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              </div>
+            </CollapsibleTrigger>
             
-            <div className="p-4 bg-white">
+            <CollapsibleContent className="p-4 bg-white">
               <div className="flex items-center gap-3 mb-4">
                 <Button 
                   onClick={() => setManageDialogOpen(true)}
@@ -242,13 +303,21 @@ const CoverSelection = () => {
                   <Settings className="h-4 w-4 mr-2" />
                   Manage
                 </Button>
-                <div className="flex-1">
+                <Button 
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Cover
+                </Button>
+                <div className="flex-1 relative">
+                  <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <Input
                     type="search"
                     placeholder="Search covers..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full"
+                    className="pl-10"
                   />
                 </div>
               </div>
@@ -271,8 +340,8 @@ const CoverSelection = () => {
                   </div>
                 ))
               )}
-            </div>
-          </div>
+            </CollapsibleContent>
+          </Collapsible>
         </div>
 
         {/* Selected Covers Summary */}

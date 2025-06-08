@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Edit, Plus, Wand2 } from 'lucide-react';
+import { Edit, Plus, Wand2, Trash2, EyeOff, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface CustomCover {
@@ -29,6 +30,7 @@ interface CustomCover {
   payoutType1: string;
   payoutType2: string;
   numberOfPerils: number;
+  hidden?: boolean;
 }
 
 interface CoverDefinition {
@@ -91,6 +93,22 @@ const CustomCoverManager = () => {
     navigate('/custom-cover-editor');
   };
 
+  const handleDeleteCover = (coverId: string) => {
+    const updatedCovers = customCovers.filter(cover => cover.id !== coverId);
+    setCustomCovers(updatedCovers);
+    localStorage.setItem('customCovers', JSON.stringify(updatedCovers));
+  };
+
+  const handleToggleHidden = (coverId: string) => {
+    const updatedCovers = customCovers.map(cover => 
+      cover.id === coverId 
+        ? { ...cover, hidden: !cover.hidden }
+        : cover
+    );
+    setCustomCovers(updatedCovers);
+    localStorage.setItem('customCovers', JSON.stringify(updatedCovers));
+  };
+
   const resetGuidedData = () => {
     setGuidedData({
       name: '',
@@ -123,7 +141,7 @@ const CustomCoverManager = () => {
         const newPerilTypes = Array(guidedData.numberOfPerils).fill('');
         setGuidedData(prev => ({ ...prev, perilTypes: newPerilTypes }));
       } else if (currentStep === 7) {
-        // Initialize perils with cover definitions
+        // Initialize perils with cover definitions using the selected peril types
         const newPerils = Array(guidedData.numberOfPerils).fill(0).map((_, index) => ({
           id: index + 1,
           type: guidedData.perilTypes[index] || '',
@@ -395,7 +413,8 @@ const CustomCoverManager = () => {
         return (
           <div className="space-y-4">
             <div>
-              <Label className="text-lg font-medium">Actions</Label>
+              <Label className="text-lg font-medium">Actions (Optional)</Label>
+              <p className="text-sm text-gray-500 mb-3">You can skip this step or fill only what you need</p>
               <div className="space-y-3 mt-3">
                 {Object.entries(guidedData.actions).map(([action, value]) => (
                   <div key={action} className="flex items-center gap-3">
@@ -409,6 +428,10 @@ const CustomCoverManager = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Select">Select</SelectItem>
+                        <SelectItem value="Sum to check against Strike">Sum to check against Strike</SelectItem>
+                        <SelectItem value="Max Value to check against Strike">Max Value to check against Strike</SelectItem>
+                        <SelectItem value="Value to check against Strike">Value to check against Strike</SelectItem>
+                        <SelectItem value="Percentage as per matrix * Payout">Percentage as per matrix * Payout</SelectItem>
                         <SelectItem value="Payout">Payout</SelectItem>
                         <SelectItem value="No Payout">No Payout</SelectItem>
                       </SelectContent>
@@ -447,7 +470,7 @@ const CustomCoverManager = () => {
       case 5: return 'Step 5: Define Peril Types';
       case 6: return 'Step 6: Payout Type';
       case 7: return 'Step 7: Cover Definitions';
-      case 8: return 'Step 8: Actions';
+      case 8: return 'Step 8: Actions (Optional)';
       case 9: return 'Step 9: Save Cover';
       default: return '';
     }
@@ -466,7 +489,7 @@ const CustomCoverManager = () => {
           def.type !== 'Select' && def.parameter !== 'Select' && def.operator !== 'Select'
         )
       );
-      case 8: return Object.values(guidedData.actions).every(action => action !== 'Select');
+      case 8: return true; // Optional step
       case 9: return true;
       default: return false;
     }
@@ -523,19 +546,38 @@ const CustomCoverManager = () => {
           <p className="text-gray-500 text-center py-4">No custom covers created yet.</p>
         ) : (
           customCovers.map((cover) => (
-            <div key={cover.id} className="flex items-center justify-between p-3 bg-gray-50 rounded border">
-              <div>
-                <p className="font-medium">{cover.name}</p>
+            <div key={cover.id} className={`flex items-center justify-between p-3 rounded border ${cover.hidden ? 'bg-gray-100 opacity-50' : 'bg-gray-50'}`}>
+              <div className="flex-1">
+                <p className={`font-medium ${cover.hidden ? 'line-through text-gray-500' : ''}`}>
+                  {cover.name} {cover.hidden && '(Hidden)'}
+                </p>
                 <p className="text-sm text-gray-600">{cover.description}</p>
               </div>
-              <Button
-                size="sm"
-                onClick={() => handleEditCover(cover.name)}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <Edit className="h-4 w-4 mr-1" />
-                Edit
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleToggleHidden(cover.id)}
+                  className="text-gray-600 hover:text-gray-800"
+                >
+                  {cover.hidden ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => handleEditCover(cover.name)}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Edit className="h-4 w-4 mr-1" />
+                  Edit
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => handleDeleteCover(cover.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           ))
         )}
